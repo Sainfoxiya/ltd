@@ -207,8 +207,18 @@
         </div>
     </div>
 
+    <!-- Email Prompt Modal -->
+    <div id="email-prompt-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black bg-opacity-70 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-lg w-full relative text-gray-800 text-center">
+            <h2 class="text-2xl font-bold mb-2">Email Required for Delivery</h2>
+            <p class="text-gray-600 mb-4">Please provide your email address to receive the gift card codes. This email will be saved to your profile for future orders.</p>
+            <input type="email" id="prompt-email-input" placeholder="Enter your email address" class="w-full p-3 rounded-lg border border-gray-300 mb-4">
+            <button id="confirm-email-btn" class="w-full bg-green-500 text-white font-semibold py-3 rounded-lg btn-primary">Confirm & Send Codes</button>
+        </div>
+    </div>
+
     <!-- Order Success Modal -->
-    <div id="order-success-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black bg-opacity-70 hidden p-4">
+    <div id="order-success-modal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-70 hidden p-4">
         <div class="glass-modal rounded-2xl p-8 max-w-lg w-full relative text-gray-800 text-center">
             <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
             <h2 class="text-3xl font-bold mb-2">Order Placed Successfully!</h2>
@@ -221,8 +231,8 @@
     <script type="module">
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, updateEmail } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, writeBatch, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         // EmailJS ko initialize karein
         (function(){
@@ -244,8 +254,12 @@
         const db = getFirestore(app);
 
         // --- DOM Elements ---
-        const navProfilePic = document.getElementById('nav-profile-pic');
         const userEmailDisplay = document.getElementById('user-email-display');
+        const emailPromptModal = document.getElementById('email-prompt-modal');
+        const promptEmailInput = document.getElementById('prompt-email-input');
+        const confirmEmailBtn = document.getElementById('confirm-email-btn');
+        // (Other elements remain the same)
+        const navProfilePic = document.getElementById('nav-profile-pic');
         const logoutButton = document.getElementById('logout-button');
         const profileMenuButton = document.getElementById('profile-menu-button');
         const profileDropdown = document.getElementById('profile-dropdown');
@@ -268,11 +282,12 @@
 
         let currentCartItems = [];
         let cartUnsubscribe = null;
+        let pendingOrderData = null; // To hold order data while waiting for email
 
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                userEmailDisplay.textContent = user.email;
+                userEmailDisplay.textContent = user.email || 'No Email Set';
                 navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
                 loadCart();
             } else {
@@ -376,38 +391,80 @@
         payWithCashBtn.addEventListener('click', async () => {
             const user = auth.currentUser;
             if (!user || currentCartItems.length === 0) return;
-            
-            if (!user.email || user.email.trim() === '') {
-                showToast("Error: Your account has no email. Please go to your dashboard to add an email address.", true);
-                checkoutModal.classList.add('hidden');
-                return;
-            }
 
             payWithCashBtn.disabled = true;
             payWithCashBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Placing Order...';
 
-            const giftCodes = currentCartItems.map(item => {
-                const codes = [];
-                for(let i = 0; i < item.quantity; i++) {
-                    codes.push(generateGiftCode(item.productId));
-                }
-                return { productName: item.name, codes: codes };
-            });
+            // Store order data temporarily
+            pendingOrderData = {
+                giftCodes: currentCartItems.map(item => {
+                    const codes = [];
+                    for(let i = 0; i < item.quantity; i++) codes.push(generateGiftCode(item.productId));
+                    return { productName: item.name, codes: codes };
+                }),
+                total: currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0)
+            };
 
-            const total = currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
+            // Check for email
+            if (!user.email || user.email.trim() === '') {
+                checkoutModal.classList.add('hidden');
+                emailPromptModal.classList.remove('hidden');
+                payWithCashBtn.disabled = false;
+                payWithCashBtn.innerHTML = '<i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash';
+                return;
+            }
+
+            // If email exists, proceed directly
+            await finalizeOrder(user.email);
+        });
+
+        confirmEmailBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            const newEmail = promptEmailInput.value;
+
+            if (!newEmail || !/^\S+@\S+\.\S+$/.test(newEmail)) {
+                showToast("Please enter a valid email address.", true);
+                return;
+            }
+
+            confirmEmailBtn.disabled = true;
+            confirmEmailBtn.textContent = "Saving...";
+
+            try {
+                // Update email in Firebase Auth and Firestore
+                await updateEmail(user, newEmail);
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, { email: newEmail });
+                
+                emailPromptModal.classList.add('hidden');
+                await finalizeOrder(newEmail);
+
+            } catch (error) {
+                console.error("Error updating email:", error);
+                showToast("Failed to update email. Please try again.", true);
+            } finally {
+                confirmEmailBtn.disabled = false;
+                confirmEmailBtn.textContent = "Confirm & Send Codes";
+            }
+        });
+
+        async function finalizeOrder(email) {
+            const user = auth.currentUser;
+            if (!user || !pendingOrderData) return;
+
             const newOrderRef = doc(collection(db, 'users', user.uid, 'orders'));
             
             try {
                 await setDoc(newOrderRef, {
                     items: currentCartItems,
-                    totalAmount: total,
+                    totalAmount: pendingOrderData.total,
                     paymentMethod: 'Cash',
                     status: 'Completed',
                     createdAt: serverTimestamp(),
-                    giftCodes: giftCodes
+                    giftCodes: pendingOrderData.giftCodes
                 });
 
-                await sendOrderConfirmationEmail(user, newOrderRef.id, giftCodes);
+                await sendOrderConfirmationEmail(user, email, newOrderRef.id, pendingOrderData.giftCodes);
 
                 const batch = writeBatch(db);
                 currentCartItems.forEach(item => {
@@ -417,18 +474,17 @@
                 await batch.commit();
 
                 orderSuccessModal.classList.remove('hidden');
-                checkoutModal.classList.add('hidden');
-
             } catch (error) {
-                console.error("Order process error: ", error);
+                console.error("Order finalization error: ", error);
                 showToast('Failed to place order. Please try again.', true);
             } finally {
+                pendingOrderData = null;
                 payWithCashBtn.disabled = false;
                 payWithCashBtn.innerHTML = '<i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash';
             }
-        });
+        }
 
-        async function sendOrderConfirmationEmail(user, orderId, giftCodes) {
+        async function sendOrderConfirmationEmail(user, email, orderId, giftCodes) {
             let codesHtml = '';
             giftCodes.forEach(item => {
                 codesHtml += `<h3>${item.productName}</h3><ul>`;
@@ -439,7 +495,7 @@
             });
 
             const templateParams = {
-                to_email: user.email,
+                to_email: email,
                 to_name: user.displayName || 'Valued Customer',
                 order_id: orderId.substring(0, 8),
                 codes_html: codesHtml,
