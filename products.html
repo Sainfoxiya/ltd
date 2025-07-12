@@ -171,7 +171,6 @@
             </button>
             <h2 class="text-2xl font-bold mb-4">Your Shopping Cart</h2>
             <div id="cart-items-container" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                <!-- Cart items will be injected here -->
                 <p id="empty-cart-message" class="text-gray-500 text-center py-8">Your cart is empty.</p>
             </div>
             <div class="border-t border-gray-300/50 mt-4 pt-4">
@@ -183,13 +182,37 @@
             </div>
         </div>
     </div>
+    
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-60 hidden p-4">
+        <div class="glass-modal rounded-2xl p-6 max-w-md w-full relative text-gray-800">
+            <button id="close-checkout-modal" class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Confirm Order</h2>
+            <div id="order-summary" class="text-sm space-y-2 mb-4">
+                <!-- Order summary will be injected here -->
+            </div>
+             <div class="border-y border-gray-300/50 my-4 py-2">
+                <div class="flex justify-between items-center font-bold text-lg">
+                    <span>Total to Pay:</span>
+                    <span id="checkout-total">$0.00</span>
+                </div>
+            </div>
+            <p class="text-center font-semibold mb-4">Select Payment Method</p>
+            <button id="pay-with-cash-btn" class="w-full bg-green-500 text-white font-semibold py-3 rounded-lg btn-primary flex items-center justify-center">
+                <i class="fas fa-money-bill-wave mr-2"></i>
+                Pay with Cash
+            </button>
+        </div>
+    </div>
 
 
     <script type="module">
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAWk4i6QDGIwh9jkNRM2X1n0AVlaeTDOeY",
@@ -221,9 +244,15 @@
         const cartTotalSpan = document.getElementById('cart-total');
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const checkoutBtn = document.getElementById('checkout-btn');
+        const checkoutModal = document.getElementById('checkout-modal');
+        const closeCheckoutModalBtn = document.getElementById('close-checkout-modal');
+        const orderSummaryContainer = document.getElementById('order-summary');
+        const checkoutTotalSpan = document.getElementById('checkout-total');
+        const payWithCashBtn = document.getElementById('pay-with-cash-btn');
 
         let currentUser = null;
-        let cartUnsubscribe = null; // To detach the Firestore listener
+        let currentCartItems = [];
+        let cartUnsubscribe = null;
 
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
@@ -234,7 +263,7 @@
                 loadCart();
             } else {
                 currentUser = null;
-                if (cartUnsubscribe) cartUnsubscribe(); // Listener ko detach karein
+                if (cartUnsubscribe) cartUnsubscribe();
                 window.location.href = 'login.html';
             }
         });
@@ -245,16 +274,16 @@
             const cartCollectionRef = collection(db, 'users', currentUser.uid, 'cart');
             
             cartUnsubscribe = onSnapshot(cartCollectionRef, (snapshot) => {
-                const cartItems = [];
+                currentCartItems = [];
                 snapshot.forEach(doc => {
-                    cartItems.push({ id: doc.id, ...doc.data() });
+                    currentCartItems.push({ id: doc.id, ...doc.data() });
                 });
-                updateCartUI(cartItems);
+                updateCartUI(currentCartItems);
             });
         }
 
         function updateCartUI(cartItems) {
-            cartItemsContainer.innerHTML = ''; // Purana content saaf karein
+            cartItemsContainer.innerHTML = '';
             if (cartItems.length === 0) {
                 cartItemsContainer.appendChild(emptyCartMessage);
                 emptyCartMessage.classList.remove('hidden');
@@ -285,7 +314,6 @@
             cartTotalSpan.textContent = `$${total.toFixed(2)}`;
             cartCountSpan.textContent = cartItems.length;
 
-            // Remove button event listeners
             document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const itemId = e.currentTarget.dataset.id;
@@ -307,15 +335,79 @@
             showToast('Item removed from cart.');
         }
 
+        // --- Checkout Logic ---
+        checkoutBtn.addEventListener('click', () => {
+            if (currentCartItems.length === 0) return;
+            
+            orderSummaryContainer.innerHTML = '';
+            let total = 0;
+            currentCartItems.forEach(item => {
+                const summaryItem = document.createElement('div');
+                summaryItem.className = 'flex justify-between';
+                summaryItem.innerHTML = `
+                    <span>${item.quantity} x ${item.name} ($${item.price})</span>
+                    <span>$${(item.quantity * item.price).toFixed(2)}</span>
+                `;
+                orderSummaryContainer.appendChild(summaryItem);
+                total += item.quantity * item.price;
+            });
+
+            checkoutTotalSpan.textContent = `$${total.toFixed(2)}`;
+            cartModal.classList.add('hidden');
+            checkoutModal.classList.remove('hidden');
+        });
+
+        payWithCashBtn.addEventListener('click', async () => {
+            if (!currentUser || currentCartItems.length === 0) return;
+
+            payWithCashBtn.disabled = true;
+            payWithCashBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Placing Order...';
+
+            const total = currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
+            const newOrderRef = doc(collection(db, 'users', currentUser.uid, 'orders'));
+            
+            try {
+                // Naya order create karein
+                await setDoc(newOrderRef, {
+                    items: currentCartItems,
+                    totalAmount: total,
+                    paymentMethod: 'Cash',
+                    status: 'Completed',
+                    createdAt: serverTimestamp()
+                });
+
+                // Batch write se cart ke sabhi items delete karein
+                const batch = writeBatch(db);
+                currentCartItems.forEach(item => {
+                    const itemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
+                    batch.delete(itemRef);
+                });
+                await batch.commit();
+
+                showToast('Order placed successfully!');
+                checkoutModal.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Error placing order: ", error);
+                showToast('Failed to place order.');
+            } finally {
+                payWithCashBtn.disabled = false;
+                payWithCashBtn.innerHTML = '<i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash';
+            }
+        });
+
+
         // --- UI Interaction ---
         logoutButton.addEventListener('click', (e) => { e.preventDefault(); signOut(auth); });
         profileMenuButton.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
         window.addEventListener('click', (e) => { if (!profileMenuButton.contains(e.target)) profileDropdown.classList.add('hidden'); });
 
-        // Cart Modal Interaction
+        // Modal Interactions
         cartIcon.addEventListener('click', (e) => { e.preventDefault(); cartModal.classList.remove('hidden'); });
         closeCartModalBtn.addEventListener('click', () => cartModal.classList.add('hidden'));
         cartModal.addEventListener('click', (e) => { if (e.target === cartModal) cartModal.classList.add('hidden'); });
+        closeCheckoutModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
+        checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
 
         // --- Product Options Logic ---
         const productCards = document.querySelectorAll('.product-card');
@@ -337,7 +429,7 @@
                 option.addEventListener('click', () => {
                     priceOptions.forEach(p => p.classList.remove('selected'));
                     option.classList.add('selected');
-                });
+});
             });
 
             addToCartBtn.addEventListener('click', async () => {
@@ -345,14 +437,8 @@
                 const quantity = parseInt(card.querySelector('.quantity').value);
                 const productName = card.querySelector('h3').textContent;
 
-                if (!selectedPrice) {
-                    showToast('Please select a price.');
-                    return;
-                }
-                if (quantity < 1) {
-                    showToast('Quantity must be at least 1.');
-                    return;
-                }
+                if (!selectedPrice) { showToast('Please select a price.'); return; }
+                if (quantity < 1) { showToast('Quantity must be at least 1.'); return; }
 
                 const price = parseFloat(selectedPrice.dataset.price);
                 
