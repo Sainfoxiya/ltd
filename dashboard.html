@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sainfoxiya Ltd</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sora', sans-serif; background-color: #f0f2f5; color: #1a202c; }
+        .aurora-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .aurora-bg::before, .aurora-bg::after {
+            content: ''; position: absolute; width: 100vw; height: 100vh;
+            background-image:
+                radial-gradient(circle at 20% 20%, #89f7fe 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #66a6ff 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #ffdde1 0%, transparent 30%);
+            mix-blend-mode: screen; filter: blur(80px); animation: moveAurora 20s infinite linear alternate;
+        }
+        .aurora-bg::after { animation-delay: -10s; }
+        @keyframes moveAurora {
+            from { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
+            to { transform: translate(0%, 0%) rotate(180deg) scale(1.5); }
+        }
+        .glass-nav, .glass-card, .glass-dropdown {
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease;
+        }
+        .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="aurora-bg"></div>
+
+    <!-- Header -->
+    <header class="glass-nav sticky top-4 mx-auto max-w-7xl rounded-xl z-50 my-4">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold text-gray-800 tracking-tight">Sainfoxiya</a>
+            
+            <!-- User Menu -->
+            <div id="user-menu" class="flex items-center space-x-4 relative">
+                 <a href="#" title="Your Cart" class="text-gray-700 hover:text-gray-900 text-xl"><i class="fas fa-shopping-cart"></i></a>
+                <button id="profile-menu-button" class="flex items-center space-x-2">
+                    <span id="user-email-display" class="hidden md:block text-sm text-gray-600 font-medium"></span>
+                    <i class="fas fa-user-circle text-2xl text-gray-700"></i>
+                </button>
+                <!-- Profile Dropdown -->
+                <div id="profile-dropdown" class="glass-dropdown absolute top-12 right-0 w-48 rounded-lg shadow-lg p-2 hidden">
+                    <a href="#" id="manage-profile-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-white/50 rounded-md">Manage Profile</a>
+                    <a href="#" id="order-history-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-white/50 rounded-md">Order History</a>
+                    <div class="border-t border-gray-300/50 my-1"></div>
+                    <a href="#" id="logout-button" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-white/50 rounded-md">Logout</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 container mx-auto px-6 py-12">
+        
+        <!-- View Container -->
+        <div id="view-container">
+            
+            <!-- Dashboard View -->
+            <div id="dashboard-view">
+                <h1 id="welcome-message" class="text-4xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
+                <p id="user-email-greeting" class="text-gray-600 mb-10">Here's your account overview.</p>
+
+                <div class="space-y-8">
+                    <!-- Quick Actions -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <a href="#" class="bg-white/50 p-4 rounded-lg flex items-center space-x-4 hover:bg-white transition-colors">
+                                <i class="fas fa-gift text-2xl text-blue-500"></i>
+                                <div>
+                                    <h3 class="font-semibold">Browse Products</h3>
+                                    <p class="text-sm text-gray-600">Find your next gift card.</p>
+                                </div>
+                            </a>
+                            <a href="#" id="order-history-quick-link" class="bg-white/50 p-4 rounded-lg flex items-center space-x-4 hover:bg-white transition-colors">
+                                <i class="fas fa-history text-2xl text-purple-500"></i>
+                                <div>
+                                    <h3 class="font-semibold">Order History</h3>
+                                    <p class="text-sm text-gray-600">View your past purchases.</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recent Orders -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Orders</h2>
+                        <div class="text-center py-10 text-gray-500">
+                            <i class="fas fa-receipt text-4xl mb-4"></i>
+                            <p>No recent orders found.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Profile View (hidden by default) -->
+            <div id="profile-view" class="hidden">
+                 <!-- ... (Profile view content remains the same) ... -->
+            </div>
+
+            <!-- Order History View (hidden by default) -->
+            <div id="order-history-view" class="hidden">
+                <!-- ... (Order history view content remains the same) ... -->
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        // --- Firebase SDK ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAWk4i6QDGIwh9jkNRM2X1n0AVlaeTDOeY",
+            authDomain: "radha-fa803.firebaseapp.com",
+            projectId: "radha-fa803",
+            storageBucket: "radha-fa803.appspot.com",
+            messagingSenderId: "837958379134",
+            appId: "1:837958379134:web:001cc5699b958165bd9a2f",
+            measurementId: "G-4FRHTBJSGJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // --- DOM Elements ---
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const userEmailGreeting = document.getElementById('user-email-greeting');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const logoutButton = document.getElementById('logout-button');
+        
+        // --- Auth State Management ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User logged in hai, isliye dashboard content dikhayein
+                console.log('User is authenticated:', user.uid);
+                
+                // UI ko user ki jaankari se update karein
+                const displayName = user.displayName || 'User';
+                const email = user.email;
+
+                welcomeMessage.textContent = `Welcome Back, ${displayName}!`;
+                userEmailGreeting.textContent = `Aapka account overview: ${email}`;
+                userEmailDisplay.textContent = email;
+                
+            } else {
+                // User logged in nahi hai, isliye login page par redirect karein
+                console.log('User is not authenticated. Redirecting to login.');
+                window.location.href = 'login.html';
+            }
+        });
+
+        // --- Logout Functionality ---
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            signOut(auth).then(() => {
+                // Sign-out safal, home page par redirect karein.
+                console.log('User signed out successfully.');
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                // Koi error hua.
+                console.error('Sign out error:', error);
+            });
+        });
+
+        // --- View Switching Logic (Aapka maujooda script) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileMenuButton = document.getElementById('profile-menu-button');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            
+            // Profile Dropdown Toggle
+            profileMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+            });
+
+            // Bahar click karne par dropdown band karein
+            window.addEventListener('click', (e) => {
+                if (!profileMenuButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.add('hidden');
+                }
+            });
+
+            // (Baaki view switching logic yahan aa jayega, usmein koi badlav nahi hai)
+        });
+    </script>
+</body>
+</html>
