@@ -63,7 +63,27 @@
         <div id="view-container">
             <!-- Dashboard View -->
             <div id="dashboard-view">
-                <!-- ... Dashboard content ... -->
+                <h1 id="welcome-message" class="text-4xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
+                <p id="user-email-greeting" class="text-gray-600 mb-10">Here's your account overview.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Browse Products -->
+                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-gift text-4xl mb-3 text-blue-500"></i>
+                        <h3 class="font-semibold text-gray-800 text-lg">Browse Products</h3>
+                    </a>
+                    <!-- Order History -->
+                    <a href="#" id="order-history-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-history text-4xl mb-3 text-purple-500"></i>
+                        <h3 class="font-semibold text-gray-800 text-lg">Order History</h3>
+                    </a>
+                    <!-- Manage Profile (Conditional) -->
+                    <a href="#" id="manage-profile-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-user-edit text-4xl mb-3 text-green-500"></i>
+                        <h3 class="font-semibold text-gray-800 text-lg">Manage Profile</h3>
+                        <p class="text-xs text-gray-500 mt-1">Complete your profile setup</p>
+                    </a>
+                </div>
             </div>
 
             <!-- Manage Profile View -->
@@ -89,17 +109,14 @@
                                 </div>
                                 <div class="flex-grow w-full">
                                     <div class="space-y-4">
-                                        <!-- Name -->
                                         <div>
                                             <label class="text-gray-600 text-sm">Name:</label>
                                             <input type="text" id="profile-name" class="w-full p-2 rounded-lg mt-1 input-field" disabled>
                                         </div>
-                                        <!-- DOB -->
                                         <div>
                                             <label class="text-gray-600 text-sm">Date of Birth:</label>
                                             <input type="date" id="profile-dob" class="w-full p-2 rounded-lg mt-1 input-field" disabled>
                                         </div>
-                                        <!-- Phone -->
                                         <div>
                                             <label class="text-gray-600 text-sm">Phone Number:</label>
                                             <input type="tel" id="profile-phone" class="w-full p-2 rounded-lg mt-1 input-field" disabled>
@@ -113,20 +130,49 @@
                         </div>
                         <!-- KYC Status Column -->
                         <div class="glass-card p-8 rounded-2xl">
-                            <!-- ... KYC content ... -->
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">KYC Verification</h2>
+                            <div class="flex items-center justify-between border-b border-gray-300/50 pb-3 mb-4">
+                                <span class="text-gray-600">Status:</span>
+                                <span id="kyc-status" class="font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full">Not Verified</span>
+                            </div>
+                            <div id="kyc-upload-section">
+                                <p class="text-sm text-gray-600 mb-3">Please upload a government-issued ID to complete verification.</p>
+                                <label for="document-upload" id="document-upload-label" class="w-full text-sm bg-white/50 border border-gray-300 rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-white">
+                                    <i class="fas fa-upload mr-2"></i>
+                                    <span id="file-name">Choose Document</span>
+                                </label>
+                                <input type="file" id="document-upload" class="hidden" accept="image/jpeg, image/png, application/pdf">
+                                <button type="button" id="submit-kyc-btn" class="w-full mt-4 bg-gray-900 text-white font-semibold py-2 rounded-lg hover:bg-gray-800 transition-colors">Submit for Verification</button>
+                            </div>
+                             <div id="kyc-verified-section" class="hidden text-center text-green-700">
+                                 <i class="fas fa-check-circle text-4xl mb-3"></i>
+                                 <p class="font-semibold">Your KYC is verified.</p>
+                             </div>
+                              <div id="kyc-pending-section" class="hidden text-center text-blue-700">
+                                 <i class="fas fa-hourglass-half text-4xl mb-3"></i>
+                                 <p class="font-semibold">Your document is pending review.</p>
+                             </div>
                         </div>
                      </div>
                  </form>
             </div>
             <!-- Order History View -->
             <div id="order-history-view" class="hidden">
-                <!-- ... Order history content ... -->
+                 <button class="back-to-dashboard-btn glass-card mb-8 px-4 py-2 rounded-lg font-semibold hover:bg-white">&larr; Back to Dashboard</button>
+                <h1 class="text-4xl font-bold text-gray-800 mb-8">Order History</h1>
+                <div class="glass-card p-8 rounded-2xl">
+                     <div class="text-center py-16 text-gray-500">
+                        <i class="fas fa-box-open text-5xl mb-4"></i>
+                        <h2 class="text-2xl font-semibold text-gray-700 mb-2">No Order History</h2>
+                        <p>You haven't made any purchases yet.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script type="module">
-        // Firebase SDK se zaroori functions import karein
+        // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
@@ -142,7 +188,7 @@
             measurementId: "G-4FRHTBJSGJ"
         };
 
-        // Firebase services ko initialize karein
+        // Firebase services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -159,7 +205,6 @@
         const profileNameInput = document.getElementById('profile-name');
         const profileDobInput = document.getElementById('profile-dob');
         const profilePhoneInput = document.getElementById('profile-phone');
-        // (Other elements from previous steps)
         const userEmailDisplay = document.getElementById('user-email-display');
         const logoutButton = document.getElementById('logout-button');
         const profileMenuButton = document.getElementById('profile-menu-button');
@@ -170,6 +215,19 @@
         const profileView = document.getElementById('profile-view');
         const orderHistoryView = document.getElementById('order-history-view');
         const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
+        const manageProfileCardLink = document.getElementById('manage-profile-card-link');
+        const orderHistoryCardLink = document.getElementById('order-history-card-link');
+
+        // KYC Elements
+        const kycStatusSpan = document.getElementById('kyc-status');
+        const kycUploadSection = document.getElementById('kyc-upload-section');
+        const kycVerifiedSection = document.getElementById('kyc-verified-section');
+        const kycPendingSection = document.getElementById('kyc-pending-section');
+        const documentUploadInput = document.getElementById('document-upload');
+        const documentUploadLabel = document.getElementById('document-upload-label');
+        const fileNameSpan = document.getElementById('file-name');
+        const submitKycBtn = document.getElementById('submit-kyc-btn');
+        let selectedKycFile = null;
 
         let currentUser = null;
 
@@ -198,8 +256,18 @@
                 profileNameInput.value = data.name || user.displayName || '';
                 profileDobInput.value = data.dob || '';
                 profilePhoneInput.value = data.phone || '';
+
+                // Hide profile card if details are filled
+                if (data.name && data.dob && data.phone) {
+                    manageProfileCardLink.classList.add('hidden');
+                }
+
+                // Update KYC status UI
+                updateKycUi(data.kycStatus);
+
             } else {
                 profileNameInput.value = user.displayName || '';
+                updateKycUi('not_verified');
             }
         }
         
@@ -224,25 +292,22 @@
             saveProfileBtn.textContent = 'Saving...';
 
             try {
-                // Update Firestore
                 const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, {
-                    name: newName,
-                    dob: newDob,
-                    phone: newPhone
-                }, { merge: true });
-
-                // Update Auth profile
+                await setDoc(userDocRef, { name: newName, dob: newDob, phone: newPhone }, { merge: true });
                 await updateProfile(currentUser, { displayName: newName });
                 
                 showMessage('success', 'Profile updated successfully!');
                 
-                // Reset UI
                 profileNameInput.disabled = true;
                 profileDobInput.disabled = true;
                 profilePhoneInput.disabled = true;
                 saveProfileBtn.classList.add('hidden');
                 editProfileBtn.classList.remove('hidden');
+                
+                // Check again to hide card after saving
+                if (newName && newDob && newPhone) {
+                    manageProfileCardLink.classList.add('hidden');
+                }
 
             } catch (error) {
                 console.error("Error updating profile: ", error);
@@ -258,7 +323,6 @@
             const file = e.target.files[0];
             if (!file || !currentUser) return;
 
-            // File type validation
             const allowedTypes = ['image/jpeg', 'image/png'];
             if (!allowedTypes.includes(file.type)) {
                 showMessage('error', 'Only JPG and PNG files are allowed.');
@@ -266,31 +330,93 @@
             }
             
             showMessage('info', 'Uploading photo...');
-
             const storageRef = ref(storage, `profile-pictures/${currentUser.uid}`);
             
             try {
-                // Upload file
                 const snapshot = await uploadBytes(storageRef, file);
-                // Get download URL
                 const downloadURL = await getDownloadURL(snapshot.ref);
 
-                // Update profile picture on page
                 profilePicture.src = downloadURL;
                 navProfilePic.src = downloadURL;
 
-                // Update Auth and Firestore
                 await updateProfile(currentUser, { photoURL: downloadURL });
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
                 
                 showMessage('success', 'Profile photo updated!');
-
             } catch (error) {
                 console.error("Error uploading photo: ", error);
                 showMessage('error', 'Failed to upload photo.');
             }
         });
+
+        // --- KYC Logic ---
+        function updateKycUi(status) {
+            kycUploadSection.classList.add('hidden');
+            kycPendingSection.classList.add('hidden');
+            kycVerifiedSection.classList.add('hidden');
+
+            switch(status) {
+                case 'pending':
+                    kycStatusSpan.textContent = 'Pending';
+                    kycStatusSpan.className = 'font-semibold bg-blue-200 text-blue-800 text-sm px-3 py-1 rounded-full';
+                    kycPendingSection.classList.remove('hidden');
+                    break;
+                case 'verified':
+                    kycStatusSpan.textContent = 'Verified';
+                    kycStatusSpan.className = 'font-semibold bg-green-200 text-green-800 text-sm px-3 py-1 rounded-full';
+                    kycVerifiedSection.classList.remove('hidden');
+                    break;
+                default: // not_verified or undefined
+                    kycStatusSpan.textContent = 'Not Verified';
+                    kycStatusSpan.className = 'font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full';
+                    kycUploadSection.classList.remove('hidden');
+            }
+        }
+
+        documentUploadInput.addEventListener('change', (e) => {
+            selectedKycFile = e.target.files[0];
+            if (selectedKycFile) {
+                fileNameSpan.textContent = selectedKycFile.name;
+            } else {
+                fileNameSpan.textContent = 'Choose Document';
+            }
+        });
+
+        submitKycBtn.addEventListener('click', async () => {
+            if (!selectedKycFile || !currentUser) {
+                showMessage('error', 'Please choose a document to upload.');
+                return;
+            }
+
+            submitKycBtn.disabled = true;
+            submitKycBtn.textContent = 'Uploading...';
+            showMessage('info', 'Uploading document...');
+
+            const storageRef = ref(storage, `kyc-documents/${currentUser.uid}/${selectedKycFile.name}`);
+
+            try {
+                const snapshot = await uploadBytes(storageRef, selectedKycFile);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                const userDocRef = doc(db, "users", currentUser.uid);
+                await setDoc(userDocRef, {
+                    kycStatus: 'pending',
+                    kycDocumentUrl: downloadURL
+                }, { merge: true });
+
+                showMessage('success', 'Document submitted for verification.');
+                updateKycUi('pending');
+
+            } catch (error) {
+                console.error("Error uploading KYC document: ", error);
+                showMessage('error', 'Failed to submit document.');
+            } finally {
+                submitKycBtn.disabled = false;
+                submitKycBtn.textContent = 'Submit for Verification';
+            }
+        });
+
 
         function showMessage(type, text) {
             profileMessage.textContent = text;
@@ -304,21 +430,27 @@
             setTimeout(() => profileMessage.classList.add('hidden'), 4000);
         }
 
-        // --- View Switching and Logout (from previous steps) ---
+        // --- View Switching and Logout ---
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
             signOut(auth);
         });
         
         function showView(viewToShow) {
-            dashboardView.style.display = 'none';
-            profileView.style.display = 'none';
-            orderHistoryView.style.display = 'none';
-            viewToShow.style.display = 'block';
+            dashboardView.classList.add('hidden');
+            profileView.classList.add('hidden');
+            orderHistoryView.classList.add('hidden');
+            viewToShow.classList.remove('hidden');
         }
-
+        
+        // Links from dropdown menu
         manageProfileLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); profileDropdown.classList.add('hidden'); });
         orderHistoryLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); profileDropdown.classList.add('hidden'); });
+        
+        // Links from dashboard cards
+        manageProfileCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); });
+        orderHistoryCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); });
+
         backToDashboardButtons.forEach(btn => btn.addEventListener('click', () => showView(dashboardView)));
         profileMenuButton.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
         window.addEventListener('click', (e) => { if (!profileMenuButton.contains(e.target)) profileDropdown.classList.add('hidden'); });
