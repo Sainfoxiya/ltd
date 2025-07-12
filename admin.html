@@ -55,22 +55,51 @@
         <main class="flex-1 p-8 overflow-y-auto">
             <!-- Dashboard View -->
             <div id="dashboard-view" class="view-content">
-                <!-- Dashboard content remains the same -->
+                <h2 class="text-3xl font-bold mb-6">Admin Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-pane p-6 rounded-lg">
+                        <h3 class="text-lg text-gray-400">Total Users</h3>
+                        <p id="total-users" class="text-4xl font-bold">0</p>
+                    </div>
+                    <div class="glass-pane p-6 rounded-lg">
+                        <h3 class="text-lg text-gray-400">Total Orders</h3>
+                        <p id="total-orders" class="text-4xl font-bold">0</p>
+                    </div>
+                    <div class="glass-pane p-6 rounded-lg">
+                        <h3 class="text-lg text-gray-400">Total Revenue</h3>
+                        <p id="total-revenue" class="text-4xl font-bold">$0</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Users View -->
             <div id="users-view" class="view-content hidden">
-                <!-- Users content remains the same -->
+                 <h2 class="text-3xl font-bold mb-6">User Management</h2>
+                <div class="glass-pane rounded-lg overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="p-4">User ID</th>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>KYC Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Orders View -->
             <div id="orders-view" class="view-content hidden">
-                <!-- Orders content remains the same -->
+                <h2 class="text-3xl font-bold mb-6">All Orders</h2>
+                <div id="orders-container" class="space-y-4"></div>
             </div>
 
             <!-- Stock View -->
             <div id="stock-view" class="view-content hidden">
-                 <!-- Stock content remains the same -->
+                 <h2 class="text-3xl font-bold mb-6">Stock Management</h2>
+                <div id="stock-container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
             </div>
 
             <!-- Product Management View -->
@@ -127,7 +156,7 @@
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, getDocs, collection, collectionGroup, query, updateDoc, doc, setDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, getDocs, collection, collectionGroup, query, updateDoc, doc, setDoc, deleteDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAWk4i6QDGIwh9jkNRM2X1n0AVlaeTDOeY",
@@ -145,195 +174,280 @@
 
         const ADMIN_UIDS = ["fv5rzHeI8weAvE5WbfgBDo0S25p1"]; 
 
-        // --- Auth & Security ---
-        onAuthStateChanged(auth, (user) => {
-            if (user && ADMIN_UIDS.includes(user.uid)) {
-                loadDashboardData();
-            } else {
-                window.location.href = 'login.html';
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Auth & Security ---
+            onAuthStateChanged(auth, (user) => {
+                if (user && ADMIN_UIDS.includes(user.uid)) {
+                    loadDashboardData();
+                } else {
+                    window.location.href = 'login.html';
+                }
+            });
+
+            // --- Data Loading ---
+            async function loadDashboardData() {
+                try {
+                    // Load Users
+                    const usersSnapshot = await getDocs(collection(db, "users"));
+                    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    document.getElementById('total-users').textContent = users.length;
+                    renderUsersTable(users);
+                    populateUserDropdown(users);
+
+                    // Load Products
+                    const productsSnapshot = await getDocs(collection(db, "products"));
+                    const products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderStock(products); // Also populates stock view
+                    renderProductManagement(products);
+                    populateProductDropdown(products);
+                    
+                    // Load Orders and Revenue
+                    const ordersQuery = query(collectionGroup(db, 'orders'));
+                    const ordersSnapshot = await getDocs(ordersQuery);
+                    const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    document.getElementById('total-orders').textContent = orders.length;
+                    renderOrders(orders);
+                    const totalRevenue = orders.reduce((sum, order) => (sum + (order.totalAmount || 0)), 0);
+                    document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+                } catch (error) {
+                    console.error("Error loading dashboard data:", error);
+                }
             }
-        });
 
-        // --- Data Loading ---
-        async function loadDashboardData() {
-            // Load Users
-            const usersSnapshot = await getDocs(collection(db, "users"));
-            const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            document.getElementById('total-users').textContent = users.length;
-            renderUsersTable(users);
-            populateUserDropdown(users);
-
-            // Load Products
-            const productsSnapshot = await getDocs(collection(db, "products"));
-            const products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderStock(products); // Also populates stock view
-            renderProductManagement(products);
-            populateProductDropdown(products);
-            
-            // Load Orders and Revenue
-            const ordersQuery = query(collectionGroup(db, 'orders'));
-            const ordersSnapshot = await getDocs(ordersQuery);
-            const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            document.getElementById('total-orders').textContent = orders.length;
-            renderOrders(orders);
-            const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-            document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
-        }
-
-        // --- Rendering Functions ---
-        function renderProductManagement(products) {
-            const container = document.getElementById('existing-products-container');
-            container.innerHTML = '';
-            products.forEach(product => {
-                const productEl = document.createElement('div');
-                productEl.className = 'flex justify-between items-center p-3 bg-gray-800/50 rounded-lg';
-                productEl.innerHTML = `
-                    <p class="font-semibold">${product.name} <span class="text-xs text-gray-400 font-mono">(${product.id})</span></p>
-                    <button class="delete-product-btn text-red-500 hover:text-red-400" data-id="${product.id}"><i class="fas fa-trash"></i></button>
-                `;
-                container.appendChild(productEl);
-            });
-
-            // Add event listeners for delete buttons
-            document.querySelectorAll('.delete-product-btn').forEach(button => {
-                button.addEventListener('click', async e => {
-                    const productId = e.currentTarget.dataset.id;
-                    if (confirm(`Are you sure you want to delete the product "${productId}"?`)) {
-                        await deleteDoc(doc(db, "products", productId));
-                        showToast(`Product ${productId} deleted.`);
-                        loadDashboardData(); // Refresh data
-                    }
-                });
-            });
-        }
-        
-        function populateUserDropdown(users) {
-            const select = document.getElementById('select-user');
-            select.innerHTML = '<option>Select a user</option>';
-            users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.email || user.id;
-                select.appendChild(option);
-            });
-        }
-
-        function populateProductDropdown(products) {
-            const select = document.getElementById('select-product');
-            select.innerHTML = '<option>Select a product</option>';
-            products.forEach(product => {
-                const option = document.createElement('option');
-                option.value = product.id;
-                option.textContent = product.name;
-                select.appendChild(option);
-            });
-        }
-        
-        async function renderDisabledProductsForUser(userId) {
-            const list = document.getElementById('disabled-products-list');
-            list.innerHTML = '<li>Loading...</li>';
-            if (!userId) {
-                list.innerHTML = '';
-                return;
-            }
-            const userDoc = await getDoc(doc(db, "users", userId));
-            if (!userDoc.exists()) {
-                list.innerHTML = '<li>User not found.</li>';
-                return;
-            }
-            const disabledProducts = userDoc.data().disabledProducts || [];
-            list.innerHTML = '';
-            if (disabledProducts.length === 0) {
-                list.innerHTML = '<li>No products disabled for this user.</li>';
-            } else {
-                disabledProducts.forEach(productId => {
-                    const item = document.createElement('li');
-                    item.className = 'flex justify-between items-center text-sm bg-gray-800/50 p-2 rounded';
-                    item.innerHTML = `
-                        <span>${productId}</span>
-                        <button class="enable-product-btn text-green-400 hover:text-green-300 text-xs" data-user-id="${userId}" data-product-id="${productId}">Re-enable</button>
+            // --- Rendering Functions ---
+            function renderProductManagement(products) {
+                const container = document.getElementById('existing-products-container');
+                container.innerHTML = '';
+                products.forEach(product => {
+                    const productEl = document.createElement('div');
+                    productEl.className = 'flex justify-between items-center p-3 bg-gray-800/50 rounded-lg';
+                    productEl.innerHTML = `
+                        <p class="font-semibold">${product.name} <span class="text-xs text-gray-400 font-mono">(${product.id})</span></p>
+                        <button class="delete-product-btn text-red-500 hover:text-red-400" data-id="${product.id}"><i class="fas fa-trash"></i></button>
                     `;
-                    list.appendChild(item);
+                    container.appendChild(productEl);
                 });
-                
-                // Add event listeners for re-enabling
-                document.querySelectorAll('.enable-product-btn').forEach(button => {
+
+                document.querySelectorAll('.delete-product-btn').forEach(button => {
                     button.addEventListener('click', async e => {
-                        const { userId, productId } = e.currentTarget.dataset;
-                        const userRef = doc(db, "users", userId);
-                        await updateDoc(userRef, {
-                            disabledProducts: arrayRemove(productId)
-                        });
-                        showToast(`Enabled ${productId} for user.`);
-                        renderDisabledProductsForUser(userId); // Refresh list
+                        const productId = e.currentTarget.dataset.id;
+                        if (confirm(`Are you sure you want to delete the product "${productId}"?`)) {
+                            await deleteDoc(doc(db, "products", productId));
+                            showToast(`Product ${productId} deleted.`);
+                            loadDashboardData();
+                        }
                     });
                 });
             }
-        }
+            
+            function populateUserDropdown(users) {
+                const select = document.getElementById('select-user');
+                select.innerHTML = '<option value="">Select a user</option>';
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.email || user.id;
+                    select.appendChild(option);
+                });
+            }
 
-        // --- Event Listeners ---
-        document.getElementById('add-product-form').addEventListener('submit', async e => {
-            e.preventDefault();
-            const id = document.getElementById('product-id').value.trim();
-            const name = document.getElementById('product-name').value.trim();
-            if (!id || !name) return;
-
-            await setDoc(doc(db, "products", id), { name: name, inStock: true });
-            showToast(`Product "${name}" added.`);
-            e.target.reset();
-            loadDashboardData(); // Refresh data
-        });
-
-        document.getElementById('select-user').addEventListener('change', e => {
-            renderDisabledProductsForUser(e.target.value);
-        });
-        
-        document.getElementById('disable-product-btn').addEventListener('click', async () => {
-            const userId = document.getElementById('select-user').value;
-            const productId = document.getElementById('select-product').value;
-            if (!userId || !productId || userId === 'Select a user' || productId === 'Select a product') {
-                alert("Please select a user and a product.");
-                return;
+            function populateProductDropdown(products) {
+                const select = document.getElementById('select-product');
+                select.innerHTML = '<option value="">Select a product</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = product.name;
+                    select.appendChild(option);
+                });
             }
             
-            const userRef = doc(db, "users", userId);
-            await updateDoc(userRef, {
-                disabledProducts: arrayUnion(productId)
-            });
-            showToast(`Disabled ${productId} for selected user.`);
-            renderDisabledProductsForUser(userId); // Refresh list
-        });
-        
-        function showToast(message) {
-            const toast = document.getElementById('toast-message');
-            toast.textContent = message;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3000);
-        }
+            async function renderDisabledProductsForUser(userId) {
+                const list = document.getElementById('disabled-products-list');
+                list.innerHTML = '<li>Loading...</li>';
+                if (!userId) {
+                    list.innerHTML = '';
+                    return;
+                }
+                const userDoc = await getDoc(doc(db, "users", userId));
+                if (!userDoc.exists()) {
+                    list.innerHTML = '<li>User not found.</li>';
+                    return;
+                }
+                const disabledProducts = userDoc.data().disabledProducts || [];
+                list.innerHTML = '';
+                if (disabledProducts.length === 0) {
+                    list.innerHTML = '<li>No products disabled for this user.</li>';
+                } else {
+                    disabledProducts.forEach(productId => {
+                        const item = document.createElement('li');
+                        item.className = 'flex justify-between items-center text-sm bg-gray-800/50 p-2 rounded';
+                        item.innerHTML = `
+                            <span>${productId}</span>
+                            <button class="enable-product-btn text-green-400 hover:text-green-300 text-xs" data-user-id="${userId}" data-product-id="${productId}">Re-enable</button>
+                        `;
+                        list.appendChild(item);
+                    });
+                    
+                    document.querySelectorAll('.enable-product-btn').forEach(button => {
+                        button.addEventListener('click', async e => {
+                            const { userId, productId } = e.currentTarget.dataset;
+                            const userRef = doc(db, "users", userId);
+                            await updateDoc(userRef, {
+                                disabledProducts: arrayRemove(productId)
+                            });
+                            showToast(`Enabled ${productId} for user.`);
+                            renderDisabledProductsForUser(userId);
+                        });
+                    });
+                }
+            }
 
-        // --- Other rendering and navigation functions ---
-        // (These functions are copied from the previous version and remain unchanged)
-        function renderUsersTable(users) { /* ... */ }
-        function renderOrders(orders) { /* ... */ }
-        function renderStock(stock) { /* ... */ }
-        const sidebarLinks = document.querySelectorAll('.sidebar-link');
-        const views = document.querySelectorAll('.view-content');
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('href').substring(1);
-                views.forEach(view => {
-                    view.id === `${targetId}-view` ? view.classList.remove('hidden') : view.classList.add('hidden');
+            function renderUsersTable(users) {
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = '';
+                users.forEach(user => {
+                    const kycStatus = user.kycStatus || 'not_verified';
+                    const statusColor = kycStatus === 'verified' ? 'bg-green-500/50 text-green-300' : kycStatus === 'pending' ? 'bg-yellow-500/50 text-yellow-300' : 'bg-red-500/50 text-red-300';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-700';
+                    row.innerHTML = `
+                        <td class="p-4 text-xs font-mono">${user.id}</td>
+                        <td>${user.email || 'N/A'}</td>
+                        <td>${user.name || 'N/A'}</td>
+                        <td><span class="px-2 py-1 text-xs rounded-full ${statusColor}">${kycStatus.replace('_', ' ')}</span></td>
+                    `;
+                    tbody.appendChild(row);
                 });
-                sidebarLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+            }
+
+            function renderOrders(orders) {
+                const container = document.getElementById('orders-container');
+                container.innerHTML = '';
+                orders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                orders.forEach(order => {
+                    const orderDate = order.createdAt?.toDate().toLocaleString() || 'N/A';
+                    const itemsHtml = order.items?.map(item => `<li>${item.quantity} x ${item.name} ($${item.price})</li>`).join('') || '';
+                    const codesHtml = (order.giftCodes || []).map(p => `<div><p class="font-semibold text-sm">${p.productName}</p><div class="pl-2">${p.codes.map(c => `<code class="text-xs">${c}</code>`).join('<br>')}</div></div>`).join('');
+
+                    const orderCard = document.createElement('div');
+                    orderCard.className = 'glass-pane p-4 rounded-lg';
+                    orderCard.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">Order #${order.id.substring(0,8)}</p>
+                                <p class="text-xs text-gray-400">User: ${order.userId || 'N/A'}</p>
+                            </div>
+                            <p class="text-sm">${orderDate}</p>
+                            <p class="font-bold text-lg">$${(order.totalAmount || 0).toFixed(2)}</p>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-700 text-xs">
+                            <p class="font-semibold">Items:</p>
+                            <ul class="list-disc list-inside">${itemsHtml}</ul>
+                            <p class="font-semibold mt-2">Gift Codes:</p>
+                            ${codesHtml}
+                        </div>
+                    `;
+                    container.appendChild(orderCard);
+                });
+            }
+
+            function renderStock(stock) {
+                const container = document.getElementById('stock-container');
+                container.innerHTML = '';
+                stock.forEach(product => {
+                    const stockCard = document.createElement('div');
+                    stockCard.className = 'glass-pane p-4 rounded-lg flex justify-between items-center';
+                    stockCard.innerHTML = `
+                        <div>
+                            <h4 class="font-bold">${product.name}</h4>
+                            <p class="text-sm ${product.inStock ? 'text-green-400' : 'text-red-400'}">
+                                ${product.inStock ? 'In Stock' : 'Out of Stock'}
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" ${product.inStock ? 'checked' : ''} class="sr-only peer stock-toggle" data-id="${product.id}">
+                            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    `;
+                    container.appendChild(stockCard);
+                });
+
+                document.querySelectorAll('.stock-toggle').forEach(toggle => {
+                    toggle.addEventListener('change', async (e) => {
+                        const productId = e.target.dataset.id;
+                        const inStock = e.target.checked;
+                        const productRef = doc(db, "products", productId);
+                        try {
+                            await updateDoc(productRef, { inStock: inStock });
+                            showToast(`Stock for ${productId} updated.`);
+                        } catch (error) {
+                            console.error("Error updating stock: ", error);
+                        }
+                    });
+                });
+            }
+
+            // --- Event Listeners ---
+            document.getElementById('add-product-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const id = document.getElementById('product-id').value.trim();
+                const name = document.getElementById('product-name').value.trim();
+                if (!id || !name) return;
+
+                await setDoc(doc(db, "products", id), { name: name, inStock: true });
+                showToast(`Product "${name}" added.`);
+                e.target.reset();
+                loadDashboardData();
+            });
+
+            document.getElementById('select-user').addEventListener('change', e => {
+                renderDisabledProductsForUser(e.target.value);
+            });
+            
+            document.getElementById('disable-product-btn').addEventListener('click', async () => {
+                const userId = document.getElementById('select-user').value;
+                const productId = document.getElementById('select-product').value;
+                if (!userId || !productId) {
+                    alert("Please select a user and a product.");
+                    return;
+                }
+                
+                const userRef = doc(db, "users", userId);
+                await updateDoc(userRef, {
+                    disabledProducts: arrayUnion(productId)
+                });
+                showToast(`Disabled ${productId} for selected user.`);
+                renderDisabledProductsForUser(userId);
+            });
+            
+            function showToast(message) {
+                const toast = document.getElementById('toast-message');
+                toast.textContent = message;
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 3000);
+            }
+
+            // --- Navigation ---
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const views = document.querySelectorAll('.view-content');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    views.forEach(view => {
+                        view.id === `${targetId}-view` ? view.classList.remove('hidden') : view.classList.add('hidden');
+                    });
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                });
+            });
+            document.getElementById('logout-button').addEventListener('click', (e) => {
+                e.preventDefault();
+                signOut(auth);
             });
         });
-        document.getElementById('logout-button').addEventListener('click', (e) => {
-            e.preventDefault();
-            signOut(auth);
-        });
-
     </script>
 </body>
 </html>
