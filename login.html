@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register - Sainfoxiya Ltd</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sora', sans-serif; background-color: #f0f2f5; }
+        .aurora-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .aurora-bg::before, .aurora-bg::after {
+            content: ''; position: absolute; width: 100vw; height: 100vh;
+            background-image:
+                radial-gradient(circle at 20% 20%, #89f7fe 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #66a6ff 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #ffdde1 0%, transparent 30%);
+            mix-blend-mode: screen; filter: blur(80px); animation: moveAurora 20s infinite linear alternate;
+        }
+        .aurora-bg::after { animation-delay: -10s; }
+        @keyframes moveAurora {
+            from { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
+            to { transform: translate(0%, 0%) rotate(180deg) scale(1.5); }
+        }
+        .glass-form {
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="aurora-bg"></div>
+
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass-form w-full max-w-md p-8 rounded-2xl shadow-lg">
+            
+            <div class="text-center mb-8">
+                <a href="index.html" class="text-3xl font-bold text-gray-800 tracking-tight">
+                    Sainfoxiya
+                </a>
+                <p id="form-title" class="text-gray-600 mt-2">Login to your account</p>
+            </div>
+
+            <!-- Message Display -->
+            <div id="message" class="hidden text-center p-3 rounded-lg mb-4 text-sm"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="login-email" class="text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="login-email" required class="w-full mt-1 p-3 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="login-password" class="text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="login-password" required class="w-full mt-1 p-3 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg hover:bg-gray-800 transition-colors">Login</button>
+            </form>
+
+            <!-- Registration Form -->
+            <form id="register-form" class="hidden space-y-6">
+                <div>
+                    <label for="register-email" class="text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="register-email" required class="w-full mt-1 p-3 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="register-password" class="text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="register-password" required class="w-full mt-1 p-3 bg-white/50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg hover:bg-gray-800 transition-colors">Create Account</button>
+            </form>
+
+            <!-- Divider -->
+            <div class="my-6 flex items-center">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="mx-4 text-gray-500 text-sm">OR</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <!-- Google Sign-In Button -->
+            <button id="google-signin" class="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="fab fa-google text-red-500 mr-3"></i>
+                Sign in with Google
+            </button>
+
+            <!-- Toggle between Login/Register -->
+            <div class="mt-6 text-center">
+                <p id="toggle-text" class="text-sm text-gray-600">
+                    Don't have an account? <a href="#" id="toggle-link" class="font-semibold text-blue-600 hover:underline">Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Firebase SDK se zaroori functions import karein
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+        // Aapki web app ki Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAWk4i6QDGIwh9jkNRM2X1n0AVlaeTDOeY",
+            authDomain: "radha-fa803.firebaseapp.com",
+            projectId: "radha-fa803",
+            storageBucket: "radha-fa803.appspot.com",
+            messagingSenderId: "837958379134",
+            appId: "1:837958379134:web:001cc5699b958165bd9a2f",
+            measurementId: "G-4FRHTBJSGJ"
+        };
+
+        // Firebase ko initialize karein
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- DOM Elements ---
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const googleSignInButton = document.getElementById('google-signin');
+        const toggleLink = document.getElementById('toggle-link');
+        const formTitle = document.getElementById('form-title');
+        const toggleText = document.getElementById('toggle-text');
+        const messageDiv = document.getElementById('message');
+
+        // --- UI Functions ---
+        function showMessage(type, text) {
+            messageDiv.textContent = text;
+            messageDiv.className = `p-3 rounded-lg mb-4 text-sm text-center ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            messageDiv.classList.remove('hidden');
+        }
+
+        function toggleForms() {
+            if (loginForm.classList.contains('hidden')) {
+                // Login form par switch karein
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                formTitle.textContent = 'Login to your account';
+                toggleText.innerHTML = `Don't have an account? <a href="#" id="toggle-link" class="font-semibold text-blue-600 hover:underline">Register here</a>`;
+            } else {
+                // Register form par switch karein
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                formTitle.textContent = 'Create a new account';
+                toggleText.innerHTML = `Already have an account? <a href="#" id="toggle-link" class="font-semibold text-blue-600 hover:underline">Login here</a>`;
+            }
+            // Naye link par event listener re-add karein
+            document.getElementById('toggle-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleForms();
+            });
+        }
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleForms();
+        });
+
+
+        // --- Firebase Auth Logic ---
+
+        // 1. Email/Password se Registration
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            showMessage('success', 'Creating account...');
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // **SAFALTA:** DASHBOARD PAR REDIRECT KAREIN
+                    window.location.href = 'dashboard.html';
+                })
+                .catch((error) => {
+                    showMessage('error', error.message);
+                });
+        });
+
+        // 2. Email/Password se Login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            showMessage('success', 'Logging in...');
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // **SAFALTA:** DASHBOARD PAR REDIRECT KAREIN
+                    window.location.href = 'dashboard.html';
+                })
+                .catch((error) => {
+                    showMessage('error', error.message);
+                });
+        });
+
+        // 3. Google se Sign-In
+        googleSignInButton.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    // **SAFALTA:** DASHBOARD PAR REDIRECT KAREIN
+                    window.location.href = 'dashboard.html';
+                }).catch((error) => {
+                    showMessage('error', error.message);
+                });
+        });
+
+        // 4. Auth State Observer (Authentication state ko check karne ke liye)
+        onAuthStateChanged(auth, (user) => {
+            // AGAR USER PEHLE SE LOGGED IN HAI, TOH USE DASHBOARD PAR REDIRECT KAR DEIN
+            if (user) {
+                console.log('User is already signed in. Redirecting to dashboard.');
+                window.location.href = 'dashboard.html';
+            } else {
+                // User signed out hai
+                console.log('User is signed out.');
+            }
+        });
+
+    </script>
+</body>
+</html>
