@@ -258,7 +258,6 @@
         const emailPromptModal = document.getElementById('email-prompt-modal');
         const promptEmailInput = document.getElementById('prompt-email-input');
         const confirmEmailBtn = document.getElementById('confirm-email-btn');
-        // (Other elements remain the same)
         const navProfilePic = document.getElementById('nav-profile-pic');
         const logoutButton = document.getElementById('logout-button');
         const profileMenuButton = document.getElementById('profile-menu-button');
@@ -282,7 +281,7 @@
 
         let currentCartItems = [];
         let cartUnsubscribe = null;
-        let pendingOrderData = null; // To hold order data while waiting for email
+        let pendingOrderData = null;
 
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
@@ -395,7 +394,6 @@
             payWithCashBtn.disabled = true;
             payWithCashBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Placing Order...';
 
-            // Store order data temporarily
             pendingOrderData = {
                 giftCodes: currentCartItems.map(item => {
                     const codes = [];
@@ -405,7 +403,6 @@
                 total: currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0)
             };
 
-            // Check for email
             if (!user.email || user.email.trim() === '') {
                 checkoutModal.classList.add('hidden');
                 emailPromptModal.classList.remove('hidden');
@@ -414,7 +411,6 @@
                 return;
             }
 
-            // If email exists, proceed directly
             await finalizeOrder(user.email);
         });
 
@@ -431,10 +427,12 @@
             confirmEmailBtn.textContent = "Saving...";
 
             try {
-                // Update email in Firebase Auth and Firestore
                 await updateEmail(user, newEmail);
                 const userDocRef = doc(db, "users", user.uid);
-                await updateDoc(userDocRef, { email: newEmail });
+                await setDoc(userDocRef, { email: newEmail }, { merge: true });
+                
+                await user.reload();
+                userEmailDisplay.textContent = newEmail;
                 
                 emailPromptModal.classList.add('hidden');
                 await finalizeOrder(newEmail);
