@@ -375,6 +375,13 @@
 
         payWithCashBtn.addEventListener('click', async () => {
             if (!currentUser || currentCartItems.length === 0) return;
+            
+            // **FIX:** Email check ko yahan add karein
+            if (!currentUser.email) {
+                showToast("Error: Please add an email to your profile to receive gift codes.");
+                checkoutModal.classList.add('hidden'); // Checkout modal ko band karein
+                return; // Function ko yahin rok dein
+            }
 
             payWithCashBtn.disabled = true;
             payWithCashBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Placing Order...';
@@ -439,10 +446,12 @@
             };
 
             try {
-                await emailjs.send('service_w1tzx15', 'template_g5wwypn', templateParams);
+                await emailjs.send('service_s25ngzq', 'template_g5wwypn', templateParams);
                 console.log('Confirmation email sent successfully!');
             } catch (error) {
                 console.error('Failed to send email:', error);
+                // User ko batayein ki email fail ho gaya hai
+                showToast("Order placed, but confirmation email failed. Check your dashboard.");
             }
         }
         
