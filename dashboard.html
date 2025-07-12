@@ -24,7 +24,7 @@
             to { transform: translate(0%, 0%) rotate(180deg) scale(1.5); }
         }
         .glass-nav, .glass-card, .glass-dropdown, .glass-modal {
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease;
         }
         .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
@@ -43,7 +43,7 @@
         <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
             <a href="index.html" class="text-2xl font-bold text-gray-800 tracking-tight">Sainfoxiya</a>
             <div id="user-menu" class="flex items-center space-x-4 relative">
-                 <a href="#" title="Your Cart" class="text-gray-700 hover:text-gray-900 text-xl"><i class="fas fa-shopping-cart"></i></a>
+                 <a href="products.html" title="Browse Products" class="text-gray-700 hover:text-gray-900 text-xl"><i class="fas fa-shopping-cart"></i></a>
                 <button id="profile-menu-button" class="flex items-center space-x-2">
                     <img id="nav-profile-pic" src="https://placehold.co/32x32/E2E8F0/333?text=U" alt="User" class="w-8 h-8 rounded-full object-cover">
                     <span id="user-email-display" class="hidden md:block text-sm text-gray-600 font-medium"></span>
@@ -68,17 +68,14 @@
                 
                 <div class="space-y-8">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Browse Products -->
-                        <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <a href="products.html" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
                             <i class="fas fa-gift text-4xl mb-3 text-blue-500"></i>
                             <h3 class="font-semibold text-gray-800 text-lg">Browse Products</h3>
                         </a>
-                        <!-- Order History -->
                         <a href="#" id="order-history-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
                             <i class="fas fa-history text-4xl mb-3 text-purple-500"></i>
                             <h3 class="font-semibold text-gray-800 text-lg">Order History</h3>
                         </a>
-                        <!-- Manage Profile (Conditional) -->
                         <a href="#" id="manage-profile-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
                             <i class="fas fa-user-edit text-4xl mb-3 text-green-500"></i>
                             <h3 class="font-semibold text-gray-800 text-lg">Manage Profile</h3>
@@ -89,9 +86,11 @@
                     <!-- Recent Orders Section -->
                     <div class="glass-card p-6 rounded-2xl">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Orders</h2>
-                        <div class="text-center py-10 text-gray-500">
-                            <i class="fas fa-receipt text-4xl mb-4"></i>
-                            <p>No recent orders found.</p>
+                        <div id="recent-orders-container" class="space-y-4">
+                            <div id="no-recent-orders" class="text-center py-10 text-gray-500">
+                                <i class="fas fa-receipt text-4xl mb-4"></i>
+                                <p>No recent orders found.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -167,16 +166,19 @@
                      </div>
                  </form>
             </div>
+            
             <!-- Order History View -->
             <div id="order-history-view" class="hidden">
                  <button class="back-to-dashboard-btn glass-card mb-8 px-4 py-2 rounded-lg font-semibold hover:bg-white">&larr; Back to Dashboard</button>
                 <h1 class="text-4xl font-bold text-gray-800 mb-8">Order History</h1>
-                <div class="glass-card p-8 rounded-2xl">
-                     <div class="text-center py-16 text-gray-500">
-                        <i class="fas fa-box-open text-5xl mb-4"></i>
-                        <h2 class="text-2xl font-semibold text-gray-700 mb-2">No Order History</h2>
-                        <p>You haven't made any purchases yet.</p>
-                    </div>
+                <div class="glass-card p-8 rounded-2xl overflow-x-auto">
+                     <div id="order-history-container">
+                         <div id="no-order-history" class="text-center py-16 text-gray-500">
+                            <i class="fas fa-box-open text-5xl mb-4"></i>
+                            <h2 class="text-2xl font-semibold text-gray-700 mb-2">No Order History</h2>
+                            <p>You haven't made any purchases yet.</p>
+                        </div>
+                     </div>
                 </div>
             </div>
         </div>
@@ -186,7 +188,7 @@
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js";
 
         const firebaseConfig = {
@@ -228,6 +230,8 @@
         const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
         const manageProfileCardLink = document.getElementById('manage-profile-card-link');
         const orderHistoryCardLink = document.getElementById('order-history-card-link');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const userEmailGreeting = document.getElementById('user-email-greeting');
 
         // KYC Elements
         const kycStatusSpan = document.getElementById('kyc-status');
@@ -235,20 +239,28 @@
         const kycVerifiedSection = document.getElementById('kyc-verified-section');
         const kycPendingSection = document.getElementById('kyc-pending-section');
         const documentUploadInput = document.getElementById('document-upload');
-        const documentUploadLabel = document.getElementById('document-upload-label');
         const fileNameSpan = document.getElementById('file-name');
         const submitKycBtn = document.getElementById('submit-kyc-btn');
         let selectedKycFile = null;
 
+        // Order Elements
+        const recentOrdersContainer = document.getElementById('recent-orders-container');
+        const noRecentOrdersMsg = document.getElementById('no-recent-orders');
+        const orderHistoryContainer = document.getElementById('order-history-container');
+        const noOrderHistoryMsg = document.getElementById('no-order-history');
+
         let currentUser = null;
+        let ordersUnsubscribe = null;
 
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 loadUserProfile(user);
+                loadOrders(user);
             } else {
                 currentUser = null;
+                if(ordersUnsubscribe) ordersUnsubscribe();
                 window.location.href = 'login.html';
             }
         });
@@ -256,6 +268,8 @@
         // --- Profile Data Loading ---
         async function loadUserProfile(user) {
             userEmailDisplay.textContent = user.email;
+            welcomeMessage.textContent = `Welcome Back, ${user.displayName || 'User'}!`;
+            userEmailGreeting.textContent = `Here's your account overview for ${user.email}.`;
             navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
             profilePicture.src = user.photoURL || 'https://placehold.co/150x150/E2E8F0/333?text=User';
 
@@ -268,22 +282,97 @@
                 profileDobInput.value = data.dob || '';
                 profilePhoneInput.value = data.phone || '';
 
-                // Profile details bharne ke baad card aur edit button hide karein
                 if (data.name && data.dob && data.phone) {
                     manageProfileCardLink.classList.add('hidden');
-                    editProfileBtn.classList.add('hidden'); // Edit button ko bhi hide karein
+                    editProfileBtn.classList.add('hidden');
                 } else {
                     manageProfileCardLink.classList.remove('hidden');
                     editProfileBtn.classList.remove('hidden');
                 }
-
-                // KYC status UI update karein
                 updateKycUi(data.kycStatus);
-
             } else {
                 profileNameInput.value = user.displayName || '';
                 updateKycUi('not_verified');
             }
+        }
+        
+        // --- Order Loading and Display ---
+        function loadOrders(user) {
+            if (!user) return;
+            const ordersRef = collection(db, 'users', user.uid, 'orders');
+            const q = query(ordersRef, orderBy('createdAt', 'desc'));
+
+            ordersUnsubscribe = onSnapshot(q, (snapshot) => {
+                const orders = [];
+                snapshot.forEach(doc => {
+                    orders.push({ id: doc.id, ...doc.data() });
+                });
+                displayRecentOrders(orders);
+                displayOrderHistory(orders);
+            });
+        }
+
+        function displayRecentOrders(orders) {
+            recentOrdersContainer.innerHTML = '';
+            if (orders.length === 0) {
+                recentOrdersContainer.appendChild(noRecentOrdersMsg);
+                return;
+            }
+
+            const recent = orders.slice(0, 3);
+            recent.forEach(order => {
+                const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const orderElement = document.createElement('div');
+                orderElement.className = 'flex justify-between items-center bg-white/30 p-3 rounded-lg';
+                orderElement.innerHTML = `
+                    <div>
+                        <p class="font-bold">Order #${order.id.substring(0, 8)}</p>
+                        <p class="text-sm text-gray-600">${orderDate}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-lg">$${order.totalAmount.toFixed(2)}</p>
+                        <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
+                    </div>
+                `;
+                recentOrdersContainer.appendChild(orderElement);
+            });
+        }
+
+        function displayOrderHistory(orders) {
+            orderHistoryContainer.innerHTML = '';
+            if (orders.length === 0) {
+                orderHistoryContainer.appendChild(noOrderHistoryMsg);
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'w-full text-left';
+            table.innerHTML = `
+                <thead>
+                    <tr class="border-b border-gray-300/50">
+                        <th class="py-2 px-2">Order ID</th>
+                        <th class="px-2">Date</th>
+                        <th class="px-2">Total</th>
+                        <th class="px-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body"></tbody>
+            `;
+            orderHistoryContainer.appendChild(table);
+            const tableBody = document.getElementById('history-table-body');
+
+            orders.forEach(order => {
+                const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-300/20';
+                row.innerHTML = `
+                    <td class="py-3 px-2 font-mono text-sm">#${order.id.substring(0, 8)}...</td>
+                    <td class="px-2">${orderDate}</td>
+                    <td class="px-2">$${order.totalAmount.toFixed(2)}</td>
+                    <td class="px-2"><span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
         
         // --- Edit/Save Profile Logic ---
@@ -303,7 +392,6 @@
             const newDob = profileDobInput.value;
             const newPhone = profilePhoneInput.value;
 
-            // Simple validation
             if (!newName || !newDob || !newPhone) {
                 showMessage('error', 'Please fill all profile fields.');
                 return;
@@ -319,13 +407,12 @@
                 
                 showMessage('success', 'Profile updated successfully!');
                 
-                // Fields ko lock karein aur buttons ko manage karein
                 profileNameInput.disabled = true;
                 profileDobInput.disabled = true;
                 profilePhoneInput.disabled = true;
                 saveProfileBtn.classList.add('hidden');
-                editProfileBtn.classList.add('hidden'); // Edit button ko permanently hide karein
-                manageProfileCardLink.classList.add('hidden'); // Dashboard se card hide karein
+                editProfileBtn.classList.add('hidden');
+                manageProfileCardLink.classList.add('hidden');
 
             } catch (error) {
                 console.error("Error updating profile: ", error);
@@ -385,7 +472,7 @@
                     kycStatusSpan.className = 'font-semibold bg-green-200 text-green-800 text-sm px-3 py-1 rounded-full';
                     kycVerifiedSection.classList.remove('hidden');
                     break;
-                default: // not_verified or undefined
+                default:
                     kycStatusSpan.textContent = 'Not Verified';
                     kycStatusSpan.className = 'font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full';
                     kycUploadSection.classList.remove('hidden');
@@ -435,7 +522,6 @@
             }
         });
 
-
         function showMessage(type, text) {
             profileMessage.textContent = text;
             const colors = {
@@ -461,11 +547,9 @@
             viewToShow.classList.remove('hidden');
         }
         
-        // Links from dropdown menu
         manageProfileLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); profileDropdown.classList.add('hidden'); });
         orderHistoryLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); profileDropdown.classList.add('hidden'); });
         
-        // Links from dashboard cards
         manageProfileCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); });
         orderHistoryCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); });
 
