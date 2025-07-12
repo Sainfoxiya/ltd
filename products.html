@@ -190,9 +190,7 @@
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="text-2xl font-bold mb-4">Confirm Order</h2>
-            <div id="order-summary" class="text-sm space-y-2 mb-4">
-                <!-- Order summary will be injected here -->
-            </div>
+            <div id="order-summary" class="text-sm space-y-2 mb-4"></div>
              <div class="border-y border-gray-300/50 my-4 py-2">
                 <div class="flex justify-between items-center font-bold text-lg">
                     <span>Total to Pay:</span>
@@ -204,6 +202,16 @@
                 <i class="fas fa-money-bill-wave mr-2"></i>
                 Pay with Cash
             </button>
+        </div>
+    </div>
+
+    <!-- Order Success Modal -->
+    <div id="order-success-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black bg-opacity-70 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-lg w-full relative text-gray-800 text-center">
+            <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+            <h2 class="text-3xl font-bold mb-2">Order Placed Successfully!</h2>
+            <p class="text-gray-600 mb-6">Your gift card codes have been sent to your registered email address. Please check your inbox (and spam folder).</p>
+            <button id="close-success-modal" class="w-full bg-gray-900 text-white font-semibold py-3 rounded-lg btn-primary">Done</button>
         </div>
     </div>
 
@@ -249,6 +257,8 @@
         const orderSummaryContainer = document.getElementById('order-summary');
         const checkoutTotalSpan = document.getElementById('checkout-total');
         const payWithCashBtn = document.getElementById('pay-with-cash-btn');
+        const orderSuccessModal = document.getElementById('order-success-modal');
+        const closeSuccessModalBtn = document.getElementById('close-success-modal');
 
         let currentUser = null;
         let currentCartItems = [];
@@ -335,7 +345,7 @@
             showToast('Item removed from cart.');
         }
 
-        // --- Checkout Logic ---
+        // --- Checkout and Payment Logic ---
         checkoutBtn.addEventListener('click', () => {
             if (currentCartItems.length === 0) return;
             
@@ -363,20 +373,30 @@
             payWithCashBtn.disabled = true;
             payWithCashBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Placing Order...';
 
+            const giftCodes = currentCartItems.map(item => {
+                const codes = [];
+                for(let i = 0; i < item.quantity; i++) {
+                    codes.push(generateGiftCode(item.productId));
+                }
+                return {
+                    productName: item.name,
+                    codes: codes
+                };
+            });
+
             const total = currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
             const newOrderRef = doc(collection(db, 'users', currentUser.uid, 'orders'));
             
             try {
-                // Naya order create karein
                 await setDoc(newOrderRef, {
                     items: currentCartItems,
                     totalAmount: total,
                     paymentMethod: 'Cash',
                     status: 'Completed',
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    giftCodes: giftCodes
                 });
 
-                // Batch write se cart ke sabhi items delete karein
                 const batch = writeBatch(db);
                 currentCartItems.forEach(item => {
                     const itemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
@@ -384,7 +404,8 @@
                 });
                 await batch.commit();
 
-                showToast('Order placed successfully!');
+                // Show success modal without codes
+                orderSuccessModal.classList.remove('hidden');
                 checkoutModal.classList.add('hidden');
 
             } catch (error) {
@@ -396,6 +417,15 @@
             }
         });
 
+        function generateGiftCode(productId) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 16; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+                if ((i + 1) % 4 === 0 && i < 15) code += '-';
+            }
+            return `${productId.slice(0,4).toUpperCase()}-${code}`;
+        }
 
         // --- UI Interaction ---
         logoutButton.addEventListener('click', (e) => { e.preventDefault(); signOut(auth); });
@@ -408,6 +438,7 @@
         cartModal.addEventListener('click', (e) => { if (e.target === cartModal) cartModal.classList.add('hidden'); });
         closeCheckoutModalBtn.addEventListener('click', () => checkoutModal.classList.add('hidden'));
         checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
+        closeSuccessModalBtn.addEventListener('click', () => orderSuccessModal.classList.add('hidden'));
 
         // --- Product Options Logic ---
         const productCards = document.querySelectorAll('.product-card');
@@ -429,7 +460,7 @@
                 option.addEventListener('click', () => {
                     priceOptions.forEach(p => p.classList.remove('selected'));
                     option.classList.add('selected');
-});
+                });
             });
 
             addToCartBtn.addEventListener('click', async () => {
