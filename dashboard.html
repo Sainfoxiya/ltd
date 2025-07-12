@@ -66,23 +66,34 @@
                 <h1 id="welcome-message" class="text-4xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
                 <p id="user-email-greeting" class="text-gray-600 mb-10">Here's your account overview.</p>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Browse Products -->
-                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-gift text-4xl mb-3 text-blue-500"></i>
-                        <h3 class="font-semibold text-gray-800 text-lg">Browse Products</h3>
-                    </a>
-                    <!-- Order History -->
-                    <a href="#" id="order-history-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-history text-4xl mb-3 text-purple-500"></i>
-                        <h3 class="font-semibold text-gray-800 text-lg">Order History</h3>
-                    </a>
-                    <!-- Manage Profile (Conditional) -->
-                    <a href="#" id="manage-profile-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-user-edit text-4xl mb-3 text-green-500"></i>
-                        <h3 class="font-semibold text-gray-800 text-lg">Manage Profile</h3>
-                        <p class="text-xs text-gray-500 mt-1">Complete your profile setup</p>
-                    </a>
+                <div class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Browse Products -->
+                        <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                            <i class="fas fa-gift text-4xl mb-3 text-blue-500"></i>
+                            <h3 class="font-semibold text-gray-800 text-lg">Browse Products</h3>
+                        </a>
+                        <!-- Order History -->
+                        <a href="#" id="order-history-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                            <i class="fas fa-history text-4xl mb-3 text-purple-500"></i>
+                            <h3 class="font-semibold text-gray-800 text-lg">Order History</h3>
+                        </a>
+                        <!-- Manage Profile (Conditional) -->
+                        <a href="#" id="manage-profile-card-link" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                            <i class="fas fa-user-edit text-4xl mb-3 text-green-500"></i>
+                            <h3 class="font-semibold text-gray-800 text-lg">Manage Profile</h3>
+                            <p class="text-xs text-gray-500 mt-1">Complete your profile setup</p>
+                        </a>
+                    </div>
+
+                    <!-- Recent Orders Section -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Orders</h2>
+                        <div class="text-center py-10 text-gray-500">
+                            <i class="fas fa-receipt text-4xl mb-4"></i>
+                            <p>No recent orders found.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -257,12 +268,16 @@
                 profileDobInput.value = data.dob || '';
                 profilePhoneInput.value = data.phone || '';
 
-                // Hide profile card if details are filled
+                // Profile details bharne ke baad card aur edit button hide karein
                 if (data.name && data.dob && data.phone) {
                     manageProfileCardLink.classList.add('hidden');
+                    editProfileBtn.classList.add('hidden'); // Edit button ko bhi hide karein
+                } else {
+                    manageProfileCardLink.classList.remove('hidden');
+                    editProfileBtn.classList.remove('hidden');
                 }
 
-                // Update KYC status UI
+                // KYC status UI update karein
                 updateKycUi(data.kycStatus);
 
             } else {
@@ -288,6 +303,12 @@
             const newDob = profileDobInput.value;
             const newPhone = profilePhoneInput.value;
 
+            // Simple validation
+            if (!newName || !newDob || !newPhone) {
+                showMessage('error', 'Please fill all profile fields.');
+                return;
+            }
+
             saveProfileBtn.disabled = true;
             saveProfileBtn.textContent = 'Saving...';
 
@@ -298,16 +319,13 @@
                 
                 showMessage('success', 'Profile updated successfully!');
                 
+                // Fields ko lock karein aur buttons ko manage karein
                 profileNameInput.disabled = true;
                 profileDobInput.disabled = true;
                 profilePhoneInput.disabled = true;
                 saveProfileBtn.classList.add('hidden');
-                editProfileBtn.classList.remove('hidden');
-                
-                // Check again to hide card after saving
-                if (newName && newDob && newPhone) {
-                    manageProfileCardLink.classList.add('hidden');
-                }
+                editProfileBtn.classList.add('hidden'); // Edit button ko permanently hide karein
+                manageProfileCardLink.classList.add('hidden'); // Dashboard se card hide karein
 
             } catch (error) {
                 console.error("Error updating profile: ", error);
