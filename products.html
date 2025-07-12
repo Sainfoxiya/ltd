@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 1. EmailJS SDK ko add karein -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         body { font-family: 'Sora', sans-serif; background-color: #f0f2f5; color: #1a202c; }
         .aurora-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
@@ -220,7 +222,12 @@
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+        // EmailJS ko initialize karein
+        (function(){
+            emailjs.init("1DbnDBUOKclWeyR2S"); 
+        })();
 
         const firebaseConfig = {
             apiKey: "AIzaSyAWk4i6QDGIwh9jkNRM2X1n0AVlaeTDOeY",
@@ -232,7 +239,6 @@
             measurementId: "G-4FRHTBJSGJ"
         };
 
-        // Firebase services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -378,10 +384,7 @@
                 for(let i = 0; i < item.quantity; i++) {
                     codes.push(generateGiftCode(item.productId));
                 }
-                return {
-                    productName: item.name,
-                    codes: codes
-                };
+                return { productName: item.name, codes: codes };
             });
 
             const total = currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
@@ -397,6 +400,8 @@
                     giftCodes: giftCodes
                 });
 
+                await sendOrderConfirmationEmail(newOrderRef.id, giftCodes);
+
                 const batch = writeBatch(db);
                 currentCartItems.forEach(item => {
                     const itemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
@@ -404,19 +409,43 @@
                 });
                 await batch.commit();
 
-                // Show success modal without codes
                 orderSuccessModal.classList.remove('hidden');
                 checkoutModal.classList.add('hidden');
 
             } catch (error) {
-                console.error("Error placing order: ", error);
-                showToast('Failed to place order.');
+                console.error("Order process error: ", error);
+                showToast('Failed to place order. Please try again.');
             } finally {
                 payWithCashBtn.disabled = false;
                 payWithCashBtn.innerHTML = '<i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash';
             }
         });
 
+        async function sendOrderConfirmationEmail(orderId, giftCodes) {
+            let codesHtml = '';
+            giftCodes.forEach(item => {
+                codesHtml += `<h3>${item.productName}</h3><ul>`;
+                item.codes.forEach(code => {
+                    codesHtml += `<li><code>${code}</code></li>`;
+                });
+                codesHtml += `</ul>`;
+            });
+
+            const templateParams = {
+                to_email: currentUser.email,
+                to_name: currentUser.displayName || 'Valued Customer',
+                order_id: orderId.substring(0, 8),
+                codes_html: codesHtml,
+            };
+
+            try {
+                await emailjs.send('service_s25ngzq', 'template_g5wwypn', templateParams);
+                console.log('Confirmation email sent successfully!');
+            } catch (error) {
+                console.error('Failed to send email:', error);
+            }
+        }
+        
         function generateGiftCode(productId) {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let code = '';
@@ -432,7 +461,6 @@
         profileMenuButton.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
         window.addEventListener('click', (e) => { if (!profileMenuButton.contains(e.target)) profileDropdown.classList.add('hidden'); });
 
-        // Modal Interactions
         cartIcon.addEventListener('click', (e) => { e.preventDefault(); cartModal.classList.remove('hidden'); });
         closeCartModalBtn.addEventListener('click', () => cartModal.classList.add('hidden'));
         cartModal.addEventListener('click', (e) => { if (e.target === cartModal) cartModal.classList.add('hidden'); });
@@ -440,7 +468,6 @@
         checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) checkoutModal.classList.add('hidden'); });
         closeSuccessModalBtn.addEventListener('click', () => orderSuccessModal.classList.add('hidden'));
 
-        // --- Product Options Logic ---
         const productCards = document.querySelectorAll('.product-card');
         productCards.forEach(card => {
             const viewOptionsBtn = card.querySelector('.view-options-btn');
