@@ -80,7 +80,7 @@
             <a href="dashboard.html" class="glass-card px-4 py-2 rounded-lg font-semibold hover:bg-white">&larr; Back to Dashboard</a>
         </div>
         
-        <div id="toast-message" class="hidden fixed top-20 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"></div>
+        <div id="toast-message" class="hidden fixed top-20 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"></div>
 
         <!-- Products Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -266,19 +266,16 @@
         const orderSuccessModal = document.getElementById('order-success-modal');
         const closeSuccessModalBtn = document.getElementById('close-success-modal');
 
-        let currentUser = null;
         let currentCartItems = [];
         let cartUnsubscribe = null;
 
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUser = user;
                 userEmailDisplay.textContent = user.email;
                 navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
                 loadCart();
             } else {
-                currentUser = null;
                 if (cartUnsubscribe) cartUnsubscribe();
                 window.location.href = 'login.html';
             }
@@ -286,8 +283,9 @@
 
         // --- Cart Logic ---
         function loadCart() {
-            if (!currentUser) return;
-            const cartCollectionRef = collection(db, 'users', currentUser.uid, 'cart');
+            const user = auth.currentUser;
+            if (!user) return;
+            const cartCollectionRef = collection(db, 'users', user.uid, 'cart');
             
             cartUnsubscribe = onSnapshot(cartCollectionRef, (snapshot) => {
                 currentCartItems = [];
@@ -339,14 +337,16 @@
         }
 
         async function addItemToCart(item) {
-            if (!currentUser) return;
-            const cartItemRef = doc(collection(db, 'users', currentUser.uid, 'cart'));
+            const user = auth.currentUser;
+            if (!user) return;
+            const cartItemRef = doc(collection(db, 'users', user.uid, 'cart'));
             await setDoc(cartItemRef, item);
         }
 
         async function removeItemFromCart(itemId) {
-            if (!currentUser) return;
-            const cartItemRef = doc(db, 'users', currentUser.uid, 'cart', itemId);
+            const user = auth.currentUser;
+            if (!user) return;
+            const cartItemRef = doc(db, 'users', user.uid, 'cart', itemId);
             await deleteDoc(cartItemRef);
             showToast('Item removed from cart.');
         }
@@ -374,13 +374,13 @@
         });
 
         payWithCashBtn.addEventListener('click', async () => {
-            if (!currentUser || currentCartItems.length === 0) return;
+            const user = auth.currentUser;
+            if (!user || currentCartItems.length === 0) return;
             
-            // **FIX:** Email check ko yahan add karein
-            if (!currentUser.email) {
-                showToast("Error: Please add an email to your profile to receive gift codes.");
-                checkoutModal.classList.add('hidden'); // Checkout modal ko band karein
-                return; // Function ko yahin rok dein
+            if (!user.email) {
+                showToast("Error: Please add an email to your profile to receive gift codes.", true);
+                checkoutModal.classList.add('hidden');
+                return;
             }
 
             payWithCashBtn.disabled = true;
@@ -395,7 +395,7 @@
             });
 
             const total = currentCartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
-            const newOrderRef = doc(collection(db, 'users', currentUser.uid, 'orders'));
+            const newOrderRef = doc(collection(db, 'users', user.uid, 'orders'));
             
             try {
                 await setDoc(newOrderRef, {
@@ -407,11 +407,11 @@
                     giftCodes: giftCodes
                 });
 
-                await sendOrderConfirmationEmail(newOrderRef.id, giftCodes);
+                await sendOrderConfirmationEmail(user, newOrderRef.id, giftCodes);
 
                 const batch = writeBatch(db);
                 currentCartItems.forEach(item => {
-                    const itemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
+                    const itemRef = doc(db, 'users', user.uid, 'cart', item.id);
                     batch.delete(itemRef);
                 });
                 await batch.commit();
@@ -421,14 +421,14 @@
 
             } catch (error) {
                 console.error("Order process error: ", error);
-                showToast('Failed to place order. Please try again.');
+                showToast('Failed to place order. Please try again.', true);
             } finally {
                 payWithCashBtn.disabled = false;
                 payWithCashBtn.innerHTML = '<i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash';
             }
         });
 
-        async function sendOrderConfirmationEmail(orderId, giftCodes) {
+        async function sendOrderConfirmationEmail(user, orderId, giftCodes) {
             let codesHtml = '';
             giftCodes.forEach(item => {
                 codesHtml += `<h3>${item.productName}</h3><ul>`;
@@ -439,8 +439,8 @@
             });
 
             const templateParams = {
-                to_email: currentUser.email,
-                to_name: currentUser.displayName || 'Valued Customer',
+                to_email: user.email,
+                to_name: user.displayName || 'Valued Customer',
                 order_id: orderId.substring(0, 8),
                 codes_html: codesHtml,
             };
@@ -450,8 +450,7 @@
                 console.log('Confirmation email sent successfully!');
             } catch (error) {
                 console.error('Failed to send email:', error);
-                // User ko batayein ki email fail ho gaya hai
-                showToast("Order placed, but confirmation email failed. Check your dashboard.");
+                showToast("Order placed, but confirmation email failed. Check your dashboard.", true);
             }
         }
         
@@ -504,8 +503,8 @@
                 const quantity = parseInt(card.querySelector('.quantity').value);
                 const productName = card.querySelector('h3').textContent;
 
-                if (!selectedPrice) { showToast('Please select a price.'); return; }
-                if (quantity < 1) { showToast('Quantity must be at least 1.'); return; }
+                if (!selectedPrice) { showToast('Please select a price.', true); return; }
+                if (quantity < 1) { showToast('Quantity must be at least 1.', true); return; }
 
                 const price = parseFloat(selectedPrice.dataset.price);
                 
@@ -523,8 +522,9 @@
             });
         });
 
-        function showToast(message) {
+        function showToast(message, isError = false) {
             toastMessage.textContent = message;
+            toastMessage.className = `fixed top-20 right-5 py-2 px-4 rounded-lg shadow-lg z-50 text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             toastMessage.classList.remove('hidden');
             setTimeout(() => {
                 toastMessage.classList.add('hidden');
