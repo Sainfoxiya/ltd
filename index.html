@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sainfoxiya Ltd - The Future of Gifting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Sora', sans-serif;
+            background-color: #f0f2f5;
+            color: #1a202c;
+            padding-bottom: 80px; /* Add padding to prevent content from being hidden by the policy bar */
+        }
+
+        /* --- Animated Aurora Background --- */
+        .aurora-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .aurora-bg::before, .aurora-bg::after {
+            content: '';
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background-image:
+                radial-gradient(circle at 20% 20%, #89f7fe 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #66a6ff 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #ffdde1 0%, transparent 30%);
+            mix-blend-mode: screen;
+            filter: blur(80px);
+            animation: moveAurora 20s infinite linear alternate;
+        }
+
+        .aurora-bg::after {
+            animation-delay: -10s;
+        }
+
+        @keyframes moveAurora {
+            from { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
+            to { transform: translate(0%, 0%) rotate(180deg) scale(1.5); }
+        }
+
+        /* --- Glassmorphism Elements --- */
+        .glass-nav, .glass-card, .glass-footer, .glass-policy, .glass-modal {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .cta-button-v4 {
+            transition: all 0.3s ease;
+        }
+        .cta-button-v4:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .section-title-v4 {
+            animation: fadeInUp 1s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="aurora-bg"></div>
+
+    <!-- Header -->
+    <header class="glass-nav sticky top-4 mx-auto max-w-7xl rounded-xl z-50 my-4">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="text-2xl font-bold text-gray-800 tracking-tight">
+                Sainfoxiya
+            </a>
+            
+            <!-- Desktop Menu & Actions -->
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#" id="support-link-desktop" class="text-gray-600 hover:text-gray-900 font-medium cursor-pointer">Support</a>
+                <a href="login.html" class="text-gray-600 hover:text-gray-900 font-medium">Login</a>
+                <a href="login.html" class="bg-gray-900 text-white font-semibold py-2 px-5 rounded-lg cta-button-v4">Register</a>
+                <a href="#" title="Your Cart" class="text-gray-700 hover:text-gray-900 text-xl">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-800 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-3">
+            <a href="#" id="support-link-mobile" class="block py-2 text-gray-600 hover:text-gray-900 cursor-pointer">Customer Support</a>
+            <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Cart</a>
+            <hr class="border-gray-300 my-2">
+            <a href="login.html" class="block py-2 text-gray-600 hover:text-gray-900">Login</a>
+            <a href="login.html" class="block mt-2 bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg text-center">Register</a>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+        <!-- Hero Section -->
+        <section class="min-h-[80vh] flex items-center">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-5xl md:text-7xl font-bold leading-tight mb-4 text-gray-800 section-title-v4">
+                    Gifting, Simplified.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10">
+                    The perfect gift is just a click away. Instant, personal, and always appreciated.
+                </p>
+                <a href="#categories" class="bg-gray-900 text-white font-bold py-4 px-10 rounded-xl text-lg cta-button-v4">Find a Card</a>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 section-title-v4">Three Easy Steps</h2>
+                    <p class="text-gray-500 mt-3 text-lg">From choice to checkout in minutes.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-10 max-w-5xl mx-auto">
+                    <!-- Step 1 -->
+                    <div class="glass-card p-8 rounded-2xl text-center">
+                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
+                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">1. Choose</h3>
+                        <p class="text-gray-600">Explore hundreds of top brands for any occasion.</p>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="glass-card p-8 rounded-2xl text-center">
+                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
+                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">2. Customize</h3>
+                        <p class="text-gray-600">Add a value, write a message, and make it unique.</p>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="glass-card p-8 rounded-2xl text-center">
+                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
+                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">3. Send</h3>
+                        <p class="text-gray-600">Deliver instantly via email or schedule for later.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section id="categories" class="py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 section-title-v4">For Every Occasion</h2>
+                    <p class="text-gray-500 mt-3 text-lg">Whatever you're celebrating, there's a card for it.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <!-- Category Card -->
+                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-utensils text-3xl mb-3 text-gray-700"></i>
+                        <h3 class="font-semibold text-gray-800">Dining</h3>
+                    </a>
+                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-shopping-bag text-3xl mb-3 text-gray-700"></i>
+                        <h3 class="font-semibold text-gray-800">Retail</h3>
+                    </a>
+                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-film text-3xl mb-3 text-gray-700"></i>
+                        <h3 class="font-semibold text-gray-800">Entertainment</h3>
+                    </a>
+                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
+                        <i class="fas fa-heart text-3xl mb-3 text-gray-700"></i>
+                        <h3 class="font-semibold text-gray-800">Wellness</h3>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Choose Us Section -->
+        <section id="features" class="py-24">
+            <div class="container mx-auto px-6">
+                <div class="max-w-4xl mx-auto glass-card rounded-2xl p-10 md:p-16">
+                    <div class="grid md:grid-cols-2 gap-10 items-center">
+                        <div class="text-center md:text-left">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-4">Why Choose Sainfoxiya?</h2>
+                            <p class="text-gray-600">We provide a secure, flexible, and lightning-fast gifting experience you can trust.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-6 text-center">
+                            <div class="bg-white/50 p-4 rounded-xl">
+                                <i class="fas fa-bolt text-2xl text-gray-800 mb-2"></i>
+                                <p class="font-semibold">Instant</p>
+                            </div>
+                            <div class="bg-white/50 p-4 rounded-xl">
+                                <i class="fas fa-shield-alt text-2xl text-gray-800 mb-2"></i>
+                                <p class="font-semibold">Secure</p>
+                            </div>
+                            <div class="bg-white/50 p-4 rounded-xl">
+                                <i class="fas fa-layer-group text-2xl text-gray-800 mb-2"></i>
+                                <p class="font-semibold">Flexible</p>
+                            </div>
+                            <div class="bg-white/50 p-4 rounded-xl">
+                                <i class="fas fa-headset text-2xl text-gray-800 mb-2"></i>
+                                <p class="font-semibold">Support</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="relative z-10 glass-footer mt-24">
+        <div class="container mx-auto px-6 py-16">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-gray-800">
+                <!-- Column 1: Company -->
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Sainfoxiya</h3>
+                    <p class="text-gray-600 text-sm">The Future of Gifting.</p>
+                </div>
+                <!-- Column 2: Legal -->
+                <div>
+                    <h3 class="font-semibold mb-4">Legal</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" id="privacy-policy-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Privacy Policy</a></li>
+                        <li><a href="#" id="terms-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Terms & Conditions</a></li>
+                        <li><a href="#" id="refund-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Refund & Exchange</a></li>
+                    </ul>
+                </div>
+                <!-- Column 3: Help -->
+                <div>
+                    <h3 class="font-semibold mb-4">Help</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" id="contact-us-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Payment Methods</a></li>
+                        <li><a href="#" id="support-link-footer" class="text-gray-600 hover:text-gray-900 cursor-pointer">Support</a></li>
+                    </ul>
+                </div>
+                 <!-- Column 4: Payment Methods -->
+                <div>
+                    <h3 class="font-semibold mb-4">We Accept</h3>
+                    <p class="text-gray-600 text-sm">Payment methods are currently unavailable.</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-300/50 mt-12 pt-8 text-center">
+                <p class="text-gray-500 text-sm">&copy; 2024 Sainfoxiya Ltd. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Policy Acceptance Bar -->
+    <div id="policy-bar" class="fixed bottom-0 left-0 w-full z-50 p-4 transition-transform duration-500 transform translate-y-0">
+        <div class="glass-policy rounded-xl max-w-4xl mx-auto flex items-center justify-between p-3 shadow-lg">
+            <p class="text-sm text-gray-700 mr-4">
+                By using our site, you agree to our <a href="#" class="font-semibold underline hover:text-gray-900">Terms & Policies</a>.
+            </p>
+            <button id="accept-policy-button" class="text-gray-600 hover:text-black text-lg flex-shrink-0">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="contact-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-sm w-full relative">
+            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Contact Us</h2>
+            <p class="text-gray-600 mb-4">For any questions or support, please reach out to us.</p>
+            <div>
+                <p class="font-semibold text-gray-800">Support Email:</p>
+                <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="refund-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
+            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Refund & Exchange Policy</h2>
+            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                <p class="font-semibold">Last Updated: July 09, 2025</p>
+                <p>Thank you for your purchase from Sainfoxiya Ltd. As our products are digital in nature, please review our policy on refunds and exchanges below.</p>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">1. General Policy</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><span class="font-semibold">All Sales Are Final:</span> Once a digital gift card is delivered to you via email or any other electronic means, the sale is considered final. It cannot be returned, refunded, or exchanged.</li>
+                        <li><span class="font-semibold">No Refunds:</span> We do not offer refunds for our digital products. Please carefully review your order before making a purchase.</li>
+                        <li><span class="font-semibold">No Exchanges:</span> A purchased gift card cannot be exchanged for a different brand, value, or type of gift card.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">2. Exceptions for Technical Issues</h3>
+                    <p>We understand that technical issues may occur. We will provide assistance in the following cases:</p>
+                    <ul class="list-disc list-inside space-y-1 mt-2">
+                        <li><span class="font-semibold">Non-Functional Code:</span> If the gift card code you received is not working or is deemed invalid, please contact our customer support team immediately.</li>
+                        <li><span class="font-semibold">Verification Process:</span> In such cases, we will investigate the issue with our team, which may involve coordinating with the brand partner. This verification process may take some time.</li>
+                        <li><span class="font-semibold">Resolution:</span> If our investigation confirms that the gift card was faulty, we will issue a new, functional gift card code of the same value and brand. Cash refunds will not be provided under any circumstances.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">3. How to Contact Support</h3>
+                    <p>If you experience an issue with your gift card, please email our customer support team at <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a> with your order details.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="privacy-policy-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
+            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Privacy Policy</h2>
+            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                <p class="font-semibold">Last Updated: July 09, 2025</p>
+                <p>Your privacy is important to us. This policy explains how we collect, use, and protect your information.</p>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">1. Information We Collect</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><span class="font-semibold">Personal Information:</span> When you register or make a purchase, we collect information such as your name, email address, and contact details.</li>
+                        <li><span class="font-semibold">Payment Information:</span> We use secure third-party payment gateways to process your payment details (e.g., credit card numbers). We do not store your financial information on our servers.</li>
+                        <li><span class="font-semibold">Usage Data:</span> We may collect data on how you interact with our website, such as the pages you visit.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">2. How We Use Your Information</h3>
+                     <ul class="list-disc list-inside space-y-1">
+                        <li>To process and deliver your orders.</li>
+                        <li>To provide you with customer support.</li>
+                        <li>To inform you about our new offers and promotions via email (you may unsubscribe at any time).</li>
+                        <li>To improve our website and services.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">3. Information Sharing</h3>
+                    <p>We do not sell or rent your personal information to third parties. We may share information only with:</p>
+                    <ul class="list-disc list-inside space-y-1 mt-2">
+                        <li>Payment processors to securely complete your transactions.</li>
+                        <li>Legal authorities, if required by law.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg mb-1">4. Data Security</h3>
+                    <p>We use industry-standard security measures to protect your information from unauthorized access.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg mb-1">5. Your Rights</h3>
+                    <p>You have the right to access and correct your personal information. You can do this through your account settings or by contacting us.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="terms-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
+        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
+            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4">Terms & Conditions</h2>
+            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                <p class="font-semibold">Last Updated: July 09, 2025</p>
+                <p>Welcome to Sainfoxiya Ltd. By using our website, you agree to the following terms and conditions.</p>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">1. Acceptance of Terms</h3>
+                    <p>By accessing or using this website, you fully accept and agree to be bound by these Terms & Conditions, our Privacy Policy, and our Refund & Exchange Policy. If you do not agree with these terms, please do not use our website.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">2. User Accounts</h3>
+                     <ul class="list-disc list-inside space-y-1">
+                        <li>You must provide accurate and complete information when creating an account.</li>
+                        <li>You are solely responsible for maintaining the confidentiality of your account and password.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">3. Purchases and Payment</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>You agree to provide current, complete, and accurate purchase and account information for all purchases made.</li>
+                        <li>Prices for our digital products are subject to change without notice.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">4. Prohibited Activities</h3>
+                    <p>You may not use this website for any illegal or unauthorized purpose.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">5. Intellectual Property</h3>
+                    <p>All content available on this site, including but not limited to logos, text, and graphics, is the property of Sainfoxiya Ltd. or our licensors and is protected by copyright laws.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg mb-1">6. Disclaimer of Warranties</h3>
+                    <p>We do not guarantee that the website will always be secure or error-free. Your use of the website is at your own risk.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg mb-1">7. Changes to Terms</h3>
+                    <p>We reserve the right to modify these Terms & Conditions at any time. Changes will be posted on the website.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg mb-1">8. Contact Information</h3>
+                    <p>For any questions regarding these terms, please contact us at <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Policy bar dismissal
+        const policyBar = document.getElementById('policy-bar');
+        const acceptPolicyButton = document.getElementById('accept-policy-button');
+
+        if (policyBar && acceptPolicyButton) {
+            acceptPolicyButton.addEventListener('click', () => {
+                policyBar.classList.add('translate-y-full');
+            });
+        }
+
+        // Modal Handling
+        const modalTriggers = {
+            'contact-us-link': 'contact-modal',
+            'support-link-desktop': 'contact-modal',
+            'support-link-mobile': 'contact-modal',
+            'support-link-footer': 'contact-modal',
+            'refund-link': 'refund-modal',
+            'privacy-policy-link': 'privacy-policy-modal',
+            'terms-link': 'terms-modal'
+        };
+
+        Object.keys(modalTriggers).forEach(triggerId => {
+            const trigger = document.getElementById(triggerId);
+            const modal = document.getElementById(modalTriggers[triggerId]);
+
+            if (trigger && modal) {
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    modal.classList.remove('hidden');
+                });
+            }
+        });
+
+        const closeButtons = document.querySelectorAll('.modal-close-button');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.closest('.fixed').classList.add('hidden');
+            });
+        });
+        
+        const modals = document.querySelectorAll('.fixed.inset-0');
+        modals.forEach(modal => {
+             modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
