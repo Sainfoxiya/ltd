@@ -191,7 +191,6 @@
     </main>
 
     <script type="module">
-        // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateEmail, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
@@ -207,425 +206,415 @@
             measurementId: "G-4FRHTBJSGJ"
         };
 
-        // Firebase services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- DOM Elements ---
-        const navProfilePic = document.getElementById('nav-profile-pic');
-        const userEmailDisplay = document.getElementById('user-email-display');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const userEmailGreeting = document.getElementById('user-email-greeting');
-        const profileMenuButton = document.getElementById('profile-menu-button');
-        const profileDropdown = document.getElementById('profile-dropdown');
-        const logoutButton = document.getElementById('logout-button');
-        
-        const dashboardView = document.getElementById('dashboard-view');
-        const profileView = document.getElementById('profile-view');
-        const orderHistoryView = document.getElementById('order-history-view');
-        
-        const manageProfileLink = document.getElementById('manage-profile-link');
-        const orderHistoryLink = document.getElementById('order-history-link');
-        const manageProfileCardLink = document.getElementById('manage-profile-card-link');
-        const orderHistoryCardLink = document.getElementById('order-history-card-link');
-        const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
+        document.addEventListener('DOMContentLoaded', () => {
+            const navProfilePic = document.getElementById('nav-profile-pic');
+            const userEmailDisplay = document.getElementById('user-email-display');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const userEmailGreeting = document.getElementById('user-email-greeting');
+            const profileMenuButton = document.getElementById('profile-menu-button');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const logoutButton = document.getElementById('logout-button');
+            
+            const dashboardView = document.getElementById('dashboard-view');
+            const profileView = document.getElementById('profile-view');
+            const orderHistoryView = document.getElementById('order-history-view');
+            
+            const manageProfileLink = document.getElementById('manage-profile-link');
+            const orderHistoryLink = document.getElementById('order-history-link');
+            const manageProfileCardLink = document.getElementById('manage-profile-card-link');
+            const orderHistoryCardLink = document.getElementById('order-history-card-link');
+            const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
 
-        const profileForm = document.getElementById('profile-form');
-        const profileMessage = document.getElementById('profile-message');
-        const profilePicture = document.getElementById('profile-picture');
-        const photoUpload = document.getElementById('photo-upload');
-        const editProfileBtn = document.getElementById('edit-profile-btn');
-        const saveProfileBtn = document.getElementById('save-profile-btn');
-        const profileNameInput = document.getElementById('profile-name');
-        const profileDobInput = document.getElementById('profile-dob');
-        const profilePhoneInput = document.getElementById('profile-phone');
+            const profileForm = document.getElementById('profile-form');
+            const profileMessage = document.getElementById('profile-message');
+            const profilePicture = document.getElementById('profile-picture');
+            const photoUpload = document.getElementById('photo-upload');
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const saveProfileBtn = document.getElementById('save-profile-btn');
+            const profileNameInput = document.getElementById('profile-name');
+            const profileDobInput = document.getElementById('profile-dob');
+            const profilePhoneInput = document.getElementById('profile-phone');
 
-        const kycStatusSpan = document.getElementById('kyc-status');
-        const kycUploadSection = document.getElementById('kyc-upload-section');
-        const kycVerifiedSection = document.getElementById('kyc-verified-section');
-        const kycPendingSection = document.getElementById('kyc-pending-section');
-        const documentUploadInput = document.getElementById('document-upload');
-        const fileNameSpan = document.getElementById('file-name');
-        const submitKycBtn = document.getElementById('submit-kyc-btn');
-        let selectedKycFile = null;
+            const kycStatusSpan = document.getElementById('kyc-status');
+            const kycUploadSection = document.getElementById('kyc-upload-section');
+            const kycVerifiedSection = document.getElementById('kyc-verified-section');
+            const kycPendingSection = document.getElementById('kyc-pending-section');
+            const documentUploadInput = document.getElementById('document-upload');
+            const fileNameSpan = document.getElementById('file-name');
+            const submitKycBtn = document.getElementById('submit-kyc-btn');
+            let selectedKycFile = null;
 
-        const recentOrdersContainer = document.getElementById('recent-orders-container');
-        const noRecentOrdersMsg = document.getElementById('no-recent-orders');
-        const orderHistoryContainer = document.getElementById('order-history-container');
-        const noOrderHistoryMsg = document.getElementById('no-order-history');
-        const toastMessage = document.getElementById('toast-message');
+            const recentOrdersContainer = document.getElementById('recent-orders-container');
+            const noRecentOrdersMsg = document.getElementById('no-recent-orders');
+            const orderHistoryContainer = document.getElementById('order-history-container');
+            const noOrderHistoryMsg = document.getElementById('no-order-history');
+            const toastMessage = document.getElementById('toast-message');
 
-        let currentUser = null;
-        let ordersUnsubscribe = null;
+            let currentUser = null;
+            let ordersUnsubscribe = null;
 
-        // --- Auth State Management ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                loadUserProfile(user);
-                loadOrders(user);
-            } else {
-                currentUser = null;
-                if(ordersUnsubscribe) ordersUnsubscribe();
-                window.location.href = 'login.html';
-            }
-        });
-        
-        // --- Profile Data Loading ---
-        async function loadUserProfile(user) {
-            userEmailDisplay.textContent = user.email || 'No Email Set';
-            welcomeMessage.textContent = `Welcome Back, ${user.displayName || 'User'}!`;
-            userEmailGreeting.textContent = `Here's your account overview for ${user.email || 'your account'}.`;
-            navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
-            profilePicture.src = user.photoURL || 'https://placehold.co/150x150/E2E8F0/333?text=User';
-
-            const userDocRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(userDocRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                profileNameInput.value = data.name || user.displayName || '';
-                profileDobInput.value = data.dob || '';
-                profilePhoneInput.value = data.phone || '';
-
-                if (data.name && data.dob && data.phone) {
-                    manageProfileCardLink.classList.add('hidden');
-                    editProfileBtn.classList.add('hidden');
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    loadUserProfile(user);
+                    loadOrders(user);
                 } else {
-                    manageProfileCardLink.classList.remove('hidden');
-                    editProfileBtn.classList.remove('hidden');
+                    if(ordersUnsubscribe) ordersUnsubscribe();
+                    window.location.href = 'login.html';
                 }
-                updateKycUi(data.kycStatus);
-            } else {
-                profileNameInput.value = user.displayName || '';
-                updateKycUi('not_verified');
-            }
-        }
-        
-        // --- Order Loading and Display ---
-        function loadOrders(user) {
-            if (!user) return;
-            const ordersRef = collection(db, 'users', user.uid, 'orders');
-            const q = query(ordersRef, orderBy('createdAt', 'desc'));
-
-            ordersUnsubscribe = onSnapshot(q, (snapshot) => {
-                const orders = [];
-                snapshot.forEach(doc => {
-                    orders.push({ id: doc.id, ...doc.data() });
-                });
-                displayRecentOrders(orders);
-                displayOrderHistory(orders);
             });
-        }
-
-        function createOrderHTML(order) {
-            const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
-            const orderTime = order.createdAt ? order.createdAt.toDate().toLocaleTimeString() : 'N/A';
             
-            let itemsHtml = order.items.map(item => `
-                <div class="flex justify-between text-sm">
-                    <span>${item.quantity} x ${item.name}</span>
-                    <span>$${(item.quantity * item.price).toFixed(2)}</span>
-                </div>
-            `).join('');
+            async function loadUserProfile(user) {
+                userEmailDisplay.textContent = user.email || 'No Email Set';
+                welcomeMessage.textContent = `Welcome Back, ${user.displayName || 'User'}!`;
+                userEmailGreeting.textContent = `Here's your account overview for ${user.email || 'your account'}.`;
+                navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
+                profilePicture.src = user.photoURL || 'https://placehold.co/150x150/E2E8F0/333?text=User';
 
-            let codesHtml = (order.giftCodes || []).map(product => `
-                <div class="mt-2">
-                    <p class="font-semibold text-sm">${product.productName}</p>
-                    <div class="pl-2 space-y-1">
-                        ${product.codes.map(code => `
-                            <div class="flex items-center justify-between bg-gray-200/50 p-1 rounded">
-                                <code class="text-xs">${code}</code>
-                                <button class="copy-code-btn text-gray-500 hover:text-black text-xs" data-code="${code}"><i class="far fa-copy"></i></button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
+                const userDocRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(userDocRef);
 
-            return `
-                <div class="order-header cursor-pointer">
-                    <div class="flex justify-between items-center mb-2">
-                        <div>
-                            <p class="font-bold">Order #${order.id.substring(0, 8)}</p>
-                            <p class="text-sm text-gray-600">${orderDate} at ${orderTime}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-lg">$${order.totalAmount.toFixed(2)}</p>
-                            <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
-                        </div>
-                        <i class="fas fa-chevron-down ml-4 transition-transform"></i>
-                    </div>
-                </div>
-                <div class="order-details mt-2 border-t border-gray-300/50 pt-2">
-                    <div class="space-y-1">
-                        <p class="font-bold text-xs uppercase text-gray-500">Items</p>
-                        ${itemsHtml}
-                    </div>
-                    <div class="mt-2 space-y-1">
-                        <p class="font-bold text-xs uppercase text-gray-500">Your Gift Codes</p>
-                        ${codesHtml}
-                    </div>
-                </div>
-            `;
-        }
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    profileNameInput.value = data.name || user.displayName || '';
+                    profileDobInput.value = data.dob || '';
+                    profilePhoneInput.value = data.phone || '';
 
-        function displayRecentOrders(orders) {
-            recentOrdersContainer.innerHTML = '';
-            if (orders.length === 0) {
-                recentOrdersContainer.appendChild(noRecentOrdersMsg);
-                return;
-            }
-
-            const recent = orders.slice(0, 3);
-            recent.forEach(order => {
-                const orderElement = document.createElement('div');
-                orderElement.className = 'bg-white/30 p-4 rounded-lg';
-                orderElement.innerHTML = createOrderHTML(order);
-                recentOrdersContainer.appendChild(orderElement);
-            });
-            addAccordionAndCopyListeners();
-        }
-
-        function displayOrderHistory(orders) {
-            orderHistoryContainer.innerHTML = '';
-            if (orders.length === 0) {
-                orderHistoryContainer.appendChild(noOrderHistoryMsg);
-                return;
-            }
-
-            orders.forEach(order => {
-                const orderWrapper = document.createElement('div');
-                orderWrapper.className = 'bg-white/30 p-4 rounded-lg';
-                orderWrapper.innerHTML = createOrderHTML(order);
-                orderHistoryContainer.appendChild(orderWrapper);
-            });
-            addAccordionAndCopyListeners();
-        }
-        
-        function addAccordionAndCopyListeners() {
-            document.querySelectorAll('.order-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const details = header.nextElementSibling;
-                    const icon = header.querySelector('i');
-                    if (details.style.maxHeight) {
-                        details.style.maxHeight = null;
-                        icon.style.transform = 'rotate(0deg)';
+                    if (data.name && data.dob && data.phone) {
+                        manageProfileCardLink.classList.add('hidden');
+                        editProfileBtn.classList.add('hidden');
                     } else {
-                        details.style.maxHeight = details.scrollHeight + "px";
-                        icon.style.transform = 'rotate(180deg)';
+                        manageProfileCardLink.classList.remove('hidden');
+                        editProfileBtn.classList.remove('hidden');
                     }
-                });
-            });
-
-            document.querySelectorAll('.copy-code-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent accordion from closing
-                    const codeToCopy = e.currentTarget.dataset.code;
-                    const tempInput = document.createElement('input');
-                    document.body.appendChild(tempInput);
-                    tempInput.value = codeToCopy;
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    showToast('Code copied to clipboard!');
-                });
-            });
-        }
-        
-        // --- Edit/Save Profile Logic ---
-        editProfileBtn.addEventListener('click', () => {
-            profileNameInput.disabled = false;
-            profileDobInput.disabled = false;
-            profilePhoneInput.disabled = false;
-            saveProfileBtn.classList.remove('hidden');
-            editProfileBtn.classList.add('hidden');
-        });
-
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser) return;
+                    updateKycUi(data.kycStatus);
+                } else {
+                    profileNameInput.value = user.displayName || '';
+                    updateKycUi('not_verified');
+                }
+            }
             
-            const newName = profileNameInput.value;
-            const newDob = profileDobInput.value;
-            const newPhone = profilePhoneInput.value;
+            function loadOrders(user) {
+                if (!user) return;
+                const ordersRef = collection(db, 'users', user.uid, 'orders');
+                const q = query(ordersRef, orderBy('createdAt', 'desc'));
 
-            if (!newName || !newDob || !newPhone) {
-                showMessage('error', 'Please fill all profile fields.');
-                return;
+                ordersUnsubscribe = onSnapshot(q, (snapshot) => {
+                    const orders = [];
+                    snapshot.forEach(doc => {
+                        orders.push({ id: doc.id, ...doc.data() });
+                    });
+                    displayRecentOrders(orders);
+                    displayOrderHistory(orders);
+                });
             }
 
-            saveProfileBtn.disabled = true;
-            saveProfileBtn.textContent = 'Saving...';
+            function createOrderHTML(order) {
+                const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const orderTime = order.createdAt ? order.createdAt.toDate().toLocaleTimeString() : 'N/A';
+                
+                let itemsHtml = order.items.map(item => `
+                    <div class="flex justify-between text-sm">
+                        <span>${item.quantity} x ${item.name}</span>
+                        <span>$${(item.quantity * item.price).toFixed(2)}</span>
+                    </div>
+                `).join('');
 
-            try {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, { name: newName, dob: newDob, phone: newPhone }, { merge: true });
-                await updateProfile(currentUser, { displayName: newName });
-                
-                showMessage('success', 'Profile updated successfully!');
-                
-                profileNameInput.disabled = true;
-                profileDobInput.disabled = true;
-                profilePhoneInput.disabled = true;
-                saveProfileBtn.classList.add('hidden');
+                let codesHtml = (order.giftCodes || []).map(product => `
+                    <div class="mt-2">
+                        <p class="font-semibold text-sm">${product.productName}</p>
+                        <div class="pl-2 space-y-1">
+                            ${product.codes.map(code => `
+                                <div class="flex items-center justify-between bg-gray-200/50 p-1 rounded">
+                                    <code class="text-xs">${code}</code>
+                                    <button class="copy-code-btn text-gray-500 hover:text-black text-xs" data-code="${code}"><i class="far fa-copy"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="order-header cursor-pointer">
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <p class="font-bold">Order #${order.id.substring(0, 8)}</p>
+                                <p class="text-sm text-gray-600">${orderDate} at ${orderTime}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-semibold text-lg">$${order.totalAmount.toFixed(2)}</p>
+                                <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
+                            </div>
+                            <i class="fas fa-chevron-down ml-4 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div class="order-details mt-2 border-t border-gray-300/50 pt-2">
+                        <div class="space-y-1">
+                            <p class="font-bold text-xs uppercase text-gray-500">Items</p>
+                            ${itemsHtml}
+                        </div>
+                        <div class="mt-2 space-y-1">
+                            <p class="font-bold text-xs uppercase text-gray-500">Your Gift Codes</p>
+                            ${codesHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            function displayRecentOrders(orders) {
+                recentOrdersContainer.innerHTML = '';
+                if (orders.length === 0) {
+                    recentOrdersContainer.appendChild(noRecentOrdersMsg);
+                    return;
+                }
+
+                const recent = orders.slice(0, 3);
+                recent.forEach(order => {
+                    const orderElement = document.createElement('div');
+                    orderElement.className = 'bg-white/30 p-4 rounded-lg';
+                    orderElement.innerHTML = createOrderHTML(order);
+                    recentOrdersContainer.appendChild(orderElement);
+                });
+                addAccordionAndCopyListeners();
+            }
+
+            function displayOrderHistory(orders) {
+                orderHistoryContainer.innerHTML = '';
+                if (orders.length === 0) {
+                    orderHistoryContainer.appendChild(noOrderHistoryMsg);
+                    return;
+                }
+
+                orders.forEach(order => {
+                    const orderWrapper = document.createElement('div');
+                    orderWrapper.className = 'bg-white/30 p-4 rounded-lg';
+                    orderWrapper.innerHTML = createOrderHTML(order);
+                    orderHistoryContainer.appendChild(orderWrapper);
+                });
+                addAccordionAndCopyListeners();
+            }
+            
+            function addAccordionAndCopyListeners() {
+                document.querySelectorAll('.order-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const details = header.nextElementSibling;
+                        const icon = header.querySelector('i');
+                        if (details.style.maxHeight) {
+                            details.style.maxHeight = null;
+                            icon.style.transform = 'rotate(0deg)';
+                        } else {
+                            details.style.maxHeight = details.scrollHeight + "px";
+                            icon.style.transform = 'rotate(180deg)';
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.copy-code-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const codeToCopy = e.currentTarget.dataset.code;
+                        const tempInput = document.createElement('input');
+                        document.body.appendChild(tempInput);
+                        tempInput.value = codeToCopy;
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        showToast('Code copied to clipboard!');
+                    });
+                });
+            }
+            
+            editProfileBtn.addEventListener('click', () => {
+                profileNameInput.disabled = false;
+                profileDobInput.disabled = false;
+                profilePhoneInput.disabled = false;
+                saveProfileBtn.classList.remove('hidden');
                 editProfileBtn.classList.add('hidden');
-                manageProfileCardLink.classList.add('hidden');
+            });
 
-            } catch (error) {
-                console.error("Error updating profile: ", error);
-                showMessage('error', 'Failed to update profile.');
-            } finally {
-                saveProfileBtn.disabled = false;
-                saveProfileBtn.textContent = 'Save Changes';
-            }
-        });
-
-        // --- Profile Picture Upload ---
-        photoUpload.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file || !currentUser) return;
-
-            const allowedTypes = ['image/jpeg', 'image/png'];
-            if (!allowedTypes.includes(file.type)) {
-                showMessage('error', 'Only JPG and PNG files are allowed.');
-                return;
-            }
-            
-            showMessage('info', 'Uploading photo...');
-            const storageRef = ref(storage, `profile-pictures/${currentUser.uid}`);
-            
-            try {
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                profilePicture.src = downloadURL;
-                navProfilePic.src = downloadURL;
-
-                await updateProfile(currentUser, { photoURL: downloadURL });
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+            profileForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentUser) return;
                 
-                showMessage('success', 'Profile photo updated!');
-            } catch (error) {
-                console.error("Error uploading photo: ", error);
-                showMessage('error', 'Failed to upload photo.');
+                const newName = profileNameInput.value;
+                const newDob = profileDobInput.value;
+                const newPhone = profilePhoneInput.value;
+
+                if (!newName || !newDob || !newPhone) {
+                    showMessage('error', 'Please fill all profile fields.');
+                    return;
+                }
+
+                saveProfileBtn.disabled = true;
+                saveProfileBtn.textContent = 'Saving...';
+
+                try {
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    await setDoc(userDocRef, { name: newName, dob: newDob, phone: newPhone }, { merge: true });
+                    await updateProfile(currentUser, { displayName: newName });
+                    
+                    showMessage('success', 'Profile updated successfully!');
+                    
+                    profileNameInput.disabled = true;
+                    profileDobInput.disabled = true;
+                    profilePhoneInput.disabled = true;
+                    saveProfileBtn.classList.add('hidden');
+                    editProfileBtn.classList.add('hidden');
+                    manageProfileCardLink.classList.add('hidden');
+
+                } catch (error) {
+                    console.error("Error updating profile: ", error);
+                    showMessage('error', 'Failed to update profile.');
+                } finally {
+                    saveProfileBtn.disabled = false;
+                    saveProfileBtn.textContent = 'Save Changes';
+                }
+            });
+
+            photoUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file || !currentUser) return;
+
+                const allowedTypes = ['image/jpeg', 'image/png'];
+                if (!allowedTypes.includes(file.type)) {
+                    showMessage('error', 'Only JPG and PNG files are allowed.');
+                    return;
+                }
+                
+                showMessage('info', 'Uploading photo...');
+                const storageRef = ref(storage, `profile-pictures/${currentUser.uid}`);
+                
+                try {
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    profilePicture.src = downloadURL;
+                    navProfilePic.src = downloadURL;
+
+                    await updateProfile(currentUser, { photoURL: downloadURL });
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
+                    
+                    showMessage('success', 'Profile photo updated!');
+                } catch (error) {
+                    console.error("Error uploading photo: ", error);
+                    showMessage('error', 'Failed to upload photo.');
+                }
+            });
+
+            function updateKycUi(status) {
+                kycUploadSection.classList.add('hidden');
+                kycPendingSection.classList.add('hidden');
+                kycVerifiedSection.classList.add('hidden');
+
+                switch(status) {
+                    case 'pending':
+                        kycStatusSpan.textContent = 'Pending';
+                        kycStatusSpan.className = 'font-semibold bg-blue-200 text-blue-800 text-sm px-3 py-1 rounded-full';
+                        kycPendingSection.classList.remove('hidden');
+                        break;
+                    case 'verified':
+                        kycStatusSpan.textContent = 'Verified';
+                        kycStatusSpan.className = 'font-semibold bg-green-200 text-green-800 text-sm px-3 py-1 rounded-full';
+                        kycVerifiedSection.classList.remove('hidden');
+                        break;
+                    default:
+                        kycStatusSpan.textContent = 'Not Verified';
+                        kycStatusSpan.className = 'font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full';
+                        kycUploadSection.classList.remove('hidden');
+                }
             }
+
+            documentUploadInput.addEventListener('change', (e) => {
+                selectedKycFile = e.target.files[0];
+                if (selectedKycFile) {
+                    fileNameSpan.textContent = selectedKycFile.name;
+                } else {
+                    fileNameSpan.textContent = 'Choose Document';
+                }
+            });
+
+            submitKycBtn.addEventListener('click', async () => {
+                if (!selectedKycFile || !currentUser) {
+                    showMessage('error', 'Please choose a document to upload.');
+                    return;
+                }
+
+                submitKycBtn.disabled = true;
+                submitKycBtn.textContent = 'Uploading...';
+                showMessage('info', 'Uploading document...');
+
+                const storageRef = ref(storage, `kyc-documents/${currentUser.uid}/${selectedKycFile.name}`);
+
+                try {
+                    const snapshot = await uploadBytes(storageRef, selectedKycFile);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    await setDoc(userDocRef, {
+                        kycStatus: 'pending',
+                        kycDocumentUrl: downloadURL
+                    }, { merge: true });
+
+                    showMessage('success', 'Document submitted for verification.');
+                    updateKycUi('pending');
+
+                } catch (error) {
+                    console.error("Error uploading KYC document: ", error);
+                    showMessage('error', 'Failed to submit document.');
+                } finally {
+                    submitKycBtn.disabled = false;
+                    submitKycBtn.textContent = 'Submit for Verification';
+                }
+            });
+
+            function showMessage(type, text) {
+                profileMessage.textContent = text;
+                const colors = {
+                    success: 'bg-green-100 text-green-800',
+                    error: 'bg-red-100 text-red-800',
+                    info: 'bg-blue-100 text-blue-800'
+                };
+                profileMessage.className = `p-3 rounded-lg mb-4 text-sm text-center ${colors[type]}`;
+                profileMessage.classList.remove('hidden');
+                setTimeout(() => profileMessage.classList.add('hidden'), 4000);
+            }
+            
+            function showToast(message, isError = false) {
+                toastMessage.textContent = message;
+                toastMessage.className = `fixed top-20 right-5 py-2 px-4 rounded-lg shadow-lg z-50 text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+                toastMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    toastMessage.classList.add('hidden');
+                }, 3000);
+            }
+
+            function showView(viewToShow) {
+                document.getElementById('dashboard-view').classList.add('hidden');
+                document.getElementById('profile-view').classList.add('hidden');
+                document.getElementById('order-history-view').classList.add('hidden');
+                viewToShow.classList.remove('hidden');
+            }
+            
+            manageProfileLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); profileDropdown.classList.add('hidden'); });
+            orderHistoryLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); profileDropdown.classList.add('hidden'); });
+            
+            manageProfileCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); });
+            orderHistoryCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); });
+
+            backToDashboardButtons.forEach(btn => btn.addEventListener('click', () => showView(dashboardView)));
+            profileMenuButton.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
+            window.addEventListener('click', (e) => { if (!profileMenuButton.contains(e.target)) profileDropdown.classList.add('hidden'); });
+            logoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                signOut(auth);
+            });
         });
-
-        // --- KYC Logic ---
-        function updateKycUi(status) {
-            kycUploadSection.classList.add('hidden');
-            kycPendingSection.classList.add('hidden');
-            kycVerifiedSection.classList.add('hidden');
-
-            switch(status) {
-                case 'pending':
-                    kycStatusSpan.textContent = 'Pending';
-                    kycStatusSpan.className = 'font-semibold bg-blue-200 text-blue-800 text-sm px-3 py-1 rounded-full';
-                    kycPendingSection.classList.remove('hidden');
-                    break;
-                case 'verified':
-                    kycStatusSpan.textContent = 'Verified';
-                    kycStatusSpan.className = 'font-semibold bg-green-200 text-green-800 text-sm px-3 py-1 rounded-full';
-                    kycVerifiedSection.classList.remove('hidden');
-                    break;
-                default:
-                    kycStatusSpan.textContent = 'Not Verified';
-                    kycStatusSpan.className = 'font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full';
-                    kycUploadSection.classList.remove('hidden');
-            }
-        }
-
-        documentUploadInput.addEventListener('change', (e) => {
-            selectedKycFile = e.target.files[0];
-            if (selectedKycFile) {
-                fileNameSpan.textContent = selectedKycFile.name;
-            } else {
-                fileNameSpan.textContent = 'Choose Document';
-            }
-        });
-
-        submitKycBtn.addEventListener('click', async () => {
-            if (!selectedKycFile || !currentUser) {
-                showMessage('error', 'Please choose a document to upload.');
-                return;
-            }
-
-            submitKycBtn.disabled = true;
-            submitKycBtn.textContent = 'Uploading...';
-            showMessage('info', 'Uploading document...');
-
-            const storageRef = ref(storage, `kyc-documents/${currentUser.uid}/${selectedKycFile.name}`);
-
-            try {
-                const snapshot = await uploadBytes(storageRef, selectedKycFile);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, {
-                    kycStatus: 'pending',
-                    kycDocumentUrl: downloadURL
-                }, { merge: true });
-
-                showMessage('success', 'Document submitted for verification.');
-                updateKycUi('pending');
-
-            } catch (error) {
-                console.error("Error uploading KYC document: ", error);
-                showMessage('error', 'Failed to submit document.');
-            } finally {
-                submitKycBtn.disabled = false;
-                submitKycBtn.textContent = 'Submit for Verification';
-            }
-        });
-
-        function showMessage(type, text) {
-            profileMessage.textContent = text;
-            const colors = {
-                success: 'bg-green-100 text-green-800',
-                error: 'bg-red-100 text-red-800',
-                info: 'bg-blue-100 text-blue-800'
-            };
-            profileMessage.className = `p-3 rounded-lg mb-4 text-sm text-center ${colors[type]}`;
-            profileMessage.classList.remove('hidden');
-            setTimeout(() => profileMessage.classList.add('hidden'), 4000);
-        }
-        
-        function showToast(message, isError = false) {
-            toastMessage.textContent = message;
-            toastMessage.className = `fixed top-20 right-5 py-2 px-4 rounded-lg shadow-lg z-50 text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
-            toastMessage.classList.remove('hidden');
-            setTimeout(() => {
-                toastMessage.classList.add('hidden');
-            }, 3000);
-        }
-
-        // --- View Switching and Logout ---
-        logoutButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            signOut(auth);
-        });
-        
-        function showView(viewToShow) {
-            dashboardView.classList.add('hidden');
-            profileView.classList.add('hidden');
-            orderHistoryView.classList.add('hidden');
-            viewToShow.classList.remove('hidden');
-        }
-        
-        manageProfileLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); profileDropdown.classList.add('hidden'); });
-        orderHistoryLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); profileDropdown.classList.add('hidden'); });
-        
-        manageProfileCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(profileView); });
-        orderHistoryCardLink.addEventListener('click', (e) => { e.preventDefault(); showView(orderHistoryView); });
-
-        backToDashboardButtons.forEach(btn => btn.addEventListener('click', () => showView(dashboardView)));
-        profileMenuButton.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
-        window.addEventListener('click', (e) => { if (!profileMenuButton.contains(e.target)) profileDropdown.classList.add('hidden'); });
-
     </script>
 </body>
 </html>
