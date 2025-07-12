@@ -65,6 +65,7 @@
 
     <!-- Main Content -->
     <main class="relative z-10 container mx-auto px-6 py-12">
+        <div id="toast-message" class="hidden fixed top-20 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50"></div>
         <div id="view-container">
             <!-- Dashboard View -->
             <div id="dashboard-view">
@@ -192,8 +193,8 @@
     <script type="module">
         // Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, updateEmail, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js";
 
         const firebaseConfig = {
@@ -213,28 +214,24 @@
         const storage = getStorage(app);
 
         // --- DOM Elements ---
-        // General
-        const userEmailDisplay = document.getElementById('user-email-display');
         const navProfilePic = document.getElementById('nav-profile-pic');
+        const userEmailDisplay = document.getElementById('user-email-display');
         const welcomeMessage = document.getElementById('welcome-message');
         const userEmailGreeting = document.getElementById('user-email-greeting');
         const profileMenuButton = document.getElementById('profile-menu-button');
         const profileDropdown = document.getElementById('profile-dropdown');
         const logoutButton = document.getElementById('logout-button');
         
-        // Views
         const dashboardView = document.getElementById('dashboard-view');
         const profileView = document.getElementById('profile-view');
         const orderHistoryView = document.getElementById('order-history-view');
         
-        // Navigation
         const manageProfileLink = document.getElementById('manage-profile-link');
         const orderHistoryLink = document.getElementById('order-history-link');
         const manageProfileCardLink = document.getElementById('manage-profile-card-link');
         const orderHistoryCardLink = document.getElementById('order-history-card-link');
         const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
 
-        // Profile View
         const profileForm = document.getElementById('profile-form');
         const profileMessage = document.getElementById('profile-message');
         const profilePicture = document.getElementById('profile-picture');
@@ -245,7 +242,6 @@
         const profileDobInput = document.getElementById('profile-dob');
         const profilePhoneInput = document.getElementById('profile-phone');
 
-        // KYC Elements
         const kycStatusSpan = document.getElementById('kyc-status');
         const kycUploadSection = document.getElementById('kyc-upload-section');
         const kycVerifiedSection = document.getElementById('kyc-verified-section');
@@ -255,11 +251,11 @@
         const submitKycBtn = document.getElementById('submit-kyc-btn');
         let selectedKycFile = null;
 
-        // Order Elements
         const recentOrdersContainer = document.getElementById('recent-orders-container');
         const noRecentOrdersMsg = document.getElementById('no-recent-orders');
         const orderHistoryContainer = document.getElementById('order-history-container');
         const noOrderHistoryMsg = document.getElementById('no-order-history');
+        const toastMessage = document.getElementById('toast-message');
 
         let currentUser = null;
         let ordersUnsubscribe = null;
@@ -279,9 +275,9 @@
         
         // --- Profile Data Loading ---
         async function loadUserProfile(user) {
-            userEmailDisplay.textContent = user.email;
+            userEmailDisplay.textContent = user.email || 'No Email Set';
             welcomeMessage.textContent = `Welcome Back, ${user.displayName || 'User'}!`;
-            userEmailGreeting.textContent = `Here's your account overview for ${user.email}.`;
+            userEmailGreeting.textContent = `Here's your account overview for ${user.email || 'your account'}.`;
             navProfilePic.src = user.photoURL || 'https://placehold.co/32x32/E2E8F0/333?text=U';
             profilePicture.src = user.photoURL || 'https://placehold.co/150x150/E2E8F0/333?text=User';
 
@@ -324,6 +320,58 @@
             });
         }
 
+        function createOrderHTML(order) {
+            const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+            const orderTime = order.createdAt ? order.createdAt.toDate().toLocaleTimeString() : 'N/A';
+            
+            let itemsHtml = order.items.map(item => `
+                <div class="flex justify-between text-sm">
+                    <span>${item.quantity} x ${item.name}</span>
+                    <span>$${(item.quantity * item.price).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            let codesHtml = (order.giftCodes || []).map(product => `
+                <div class="mt-2">
+                    <p class="font-semibold text-sm">${product.productName}</p>
+                    <div class="pl-2 space-y-1">
+                        ${product.codes.map(code => `
+                            <div class="flex items-center justify-between bg-gray-200/50 p-1 rounded">
+                                <code class="text-xs">${code}</code>
+                                <button class="copy-code-btn text-gray-500 hover:text-black text-xs" data-code="${code}"><i class="far fa-copy"></i></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="order-header cursor-pointer">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <p class="font-bold">Order #${order.id.substring(0, 8)}</p>
+                            <p class="text-sm text-gray-600">${orderDate} at ${orderTime}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold text-lg">$${order.totalAmount.toFixed(2)}</p>
+                            <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
+                        </div>
+                        <i class="fas fa-chevron-down ml-4 transition-transform"></i>
+                    </div>
+                </div>
+                <div class="order-details mt-2 border-t border-gray-300/50 pt-2">
+                    <div class="space-y-1">
+                        <p class="font-bold text-xs uppercase text-gray-500">Items</p>
+                        ${itemsHtml}
+                    </div>
+                    <div class="mt-2 space-y-1">
+                        <p class="font-bold text-xs uppercase text-gray-500">Your Gift Codes</p>
+                        ${codesHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         function displayRecentOrders(orders) {
             recentOrdersContainer.innerHTML = '';
             if (orders.length === 0) {
@@ -333,34 +381,12 @@
 
             const recent = orders.slice(0, 3);
             recent.forEach(order => {
-                const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
                 const orderElement = document.createElement('div');
                 orderElement.className = 'bg-white/30 p-4 rounded-lg';
-                
-                let itemsHtml = order.items.map(item => `
-                    <div class="flex justify-between text-sm">
-                        <span>${item.quantity} x ${item.name}</span>
-                        <span>$${(item.quantity * item.price).toFixed(2)}</span>
-                    </div>
-                `).join('');
-
-                orderElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <div>
-                            <p class="font-bold">Order #${order.id.substring(0, 8)}</p>
-                            <p class="text-sm text-gray-600">${orderDate}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-lg">$${order.totalAmount.toFixed(2)}</p>
-                            <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
-                        </div>
-                    </div>
-                    <div class="border-t border-gray-300/50 pt-2 mt-2 space-y-1">
-                        ${itemsHtml}
-                    </div>
-                `;
+                orderElement.innerHTML = createOrderHTML(order);
                 recentOrdersContainer.appendChild(orderElement);
             });
+            addAccordionAndCopyListeners();
         }
 
         function displayOrderHistory(orders) {
@@ -371,56 +397,15 @@
             }
 
             orders.forEach(order => {
-                const orderDate = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
-                const orderTime = order.createdAt ? order.createdAt.toDate().toLocaleTimeString() : 'N/A';
-                
                 const orderWrapper = document.createElement('div');
                 orderWrapper.className = 'bg-white/30 p-4 rounded-lg';
-
-                let itemsTable = `
-                    <table class="w-full text-sm mt-2">
-                        <thead>
-                            <tr class="border-b border-gray-400/30">
-                                <th class="text-left font-semibold pb-1">Product</th>
-                                <th class="text-center font-semibold pb-1">Quantity</th>
-                                <th class="text-right font-semibold pb-1">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${order.items.map(item => `
-                                <tr>
-                                    <td class="py-1">${item.name} ($${item.price})</td>
-                                    <td class="text-center">${item.quantity}</td>
-                                    <td class="text-right">$${(item.quantity * item.price).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-
-                orderWrapper.innerHTML = `
-                    <div class="order-header cursor-pointer flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-lg">Order #${order.id.substring(0, 8)}</p>
-                            <p class="text-sm text-gray-600">${orderDate} at ${orderTime}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-xl">$${order.totalAmount.toFixed(2)}</p>
-                            <span class="text-xs px-2 py-1 rounded-full bg-green-200 text-green-800">${order.status}</span>
-                        </div>
-                        <i class="fas fa-chevron-down ml-4 transition-transform"></i>
-                    </div>
-                    <div class="order-details mt-2 border-t border-gray-300/50 pt-2">
-                        ${itemsTable}
-                        <div class="text-right mt-2 text-sm text-gray-600">
-                            <p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
-                            <p><strong>Delivery:</strong> To your registered email</p>
-                        </div>
-                    </div>
-                `;
+                orderWrapper.innerHTML = createOrderHTML(order);
                 orderHistoryContainer.appendChild(orderWrapper);
             });
-
+            addAccordionAndCopyListeners();
+        }
+        
+        function addAccordionAndCopyListeners() {
             document.querySelectorAll('.order-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const details = header.nextElementSibling;
@@ -432,6 +417,20 @@
                         details.style.maxHeight = details.scrollHeight + "px";
                         icon.style.transform = 'rotate(180deg)';
                     }
+                });
+            });
+
+            document.querySelectorAll('.copy-code-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent accordion from closing
+                    const codeToCopy = e.currentTarget.dataset.code;
+                    const tempInput = document.createElement('input');
+                    document.body.appendChild(tempInput);
+                    tempInput.value = codeToCopy;
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    showToast('Code copied to clipboard!');
                 });
             });
         }
@@ -593,6 +592,15 @@
             profileMessage.className = `p-3 rounded-lg mb-4 text-sm text-center ${colors[type]}`;
             profileMessage.classList.remove('hidden');
             setTimeout(() => profileMessage.classList.add('hidden'), 4000);
+        }
+        
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toastMessage.className = `fixed top-20 right-5 py-2 px-4 rounded-lg shadow-lg z-50 text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toastMessage.classList.remove('hidden');
+            setTimeout(() => {
+                toastMessage.classList.add('hidden');
+            }, 3000);
         }
 
         // --- View Switching and Logout ---
