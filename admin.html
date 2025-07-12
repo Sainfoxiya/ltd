@@ -124,7 +124,50 @@
 
             <!-- Product Management View -->
             <div id="product-management-view" class="view-content hidden">
-                <!-- Product Management content remains the same -->
+                <h2 class="text-3xl font-bold mb-6">Product Management</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Add/Edit Product -->
+                    <div class="glass-pane p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4">Add New Product</h3>
+                        <form id="add-product-form" class="space-y-4">
+                            <div>
+                                <label for="product-id" class="text-sm text-gray-400">Product ID (e.g., 'amazon')</label>
+                                <input type="text" id="product-id" required class="w-full p-2 mt-1 rounded-lg input-dark">
+                            </div>
+                            <div>
+                                <label for="product-name" class="text-sm text-gray-400">Product Name</label>
+                                <input type="text" id="product-name" required class="w-full p-2 mt-1 rounded-lg input-dark">
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg btn">Add Product</button>
+                        </form>
+                    </div>
+
+                    <!-- Disable Product for User -->
+                    <div class="glass-pane p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4">Disable Product for a User</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="select-user" class="text-sm text-gray-400">Select User</label>
+                                <select id="select-user" class="w-full p-2 mt-1 rounded-lg input-dark"></select>
+                            </div>
+                            <div>
+                                <label for="select-product" class="text-sm text-gray-400">Select Product to Disable</label>
+                                <select id="select-product" class="w-full p-2 mt-1 rounded-lg input-dark"></select>
+                            </div>
+                            <button id="disable-product-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-black font-semibold py-2 rounded-lg btn">Disable Product</button>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="font-bold mb-2">Currently Disabled:</h4>
+                            <ul id="disabled-products-list" class="text-sm space-y-2"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Products List -->
+                <div class="mt-8 glass-pane p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-4">Existing Products</h3>
+                    <div id="existing-products-container" class="space-y-3"></div>
+                </div>
             </div>
         </main>
     </div>
@@ -209,6 +252,69 @@
                 }
             }
 
+            // --- Revenue & Charting ---
+            function processRevenue(orders) {
+                const now = new Date();
+                const todayStart = new Date(now.setHours(0, 0, 0, 0));
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                
+                let todayRevenue = 0;
+                let monthRevenue = 0;
+                const weeklyData = { labels: [], data: [] };
+                const weekMap = {};
+
+                orders.forEach(order => {
+                    if (!order.createdAt) return;
+                    const orderDate = order.createdAt.toDate();
+                    
+                    if (orderDate >= todayStart) {
+                        todayRevenue += order.totalAmount || 0;
+                    }
+                    if (orderDate >= monthStart) {
+                        monthRevenue += order.totalAmount || 0;
+                    }
+
+                    const day = orderDate.toLocaleDateString('en-US', { weekday: 'short' });
+                    if(!weekMap[day]) weekMap[day] = 0;
+                    weekMap[day] += order.totalAmount || 0;
+                });
+
+                document.getElementById('today-revenue').textContent = `$${todayRevenue.toFixed(2)}`;
+                document.getElementById('month-revenue').textContent = `$${monthRevenue.toFixed(2)}`;
+                
+                const sortedDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                sortedDays.forEach(day => {
+                    weeklyData.labels.push(day);
+                    weeklyData.data.push(weekMap[day] || 0);
+                });
+
+                renderRevenueChart(weeklyData);
+            }
+
+            function renderRevenueChart(weeklyData) {
+                if(revenueChart.destroy) revenueChart.destroy();
+                revenueChart = new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: weeklyData.labels,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: weeklyData.data,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
             // --- Rendering Functions ---
             function renderUsersTable(users, orders) {
                 const tbody = document.getElementById('users-table-body');
@@ -248,6 +354,73 @@
                 document.querySelectorAll('.view-user-orders-btn').forEach(btn => btn.addEventListener('click', showUserDetailsModal));
             }
             
+            function renderStock(products) {
+                const container = document.getElementById('stock-container');
+                container.innerHTML = '';
+                products.forEach(product => {
+                    const stockCard = document.createElement('div');
+                    stockCard.className = 'glass-pane p-4 rounded-lg';
+                    stockCard.innerHTML = `
+                        <h4 class="font-bold">${product.name}</h4>
+                        <p class="text-sm ${product.quantity > 0 ? 'text-green-400' : 'text-red-400'}">
+                            ${product.quantity > 0 ? `${product.quantity} in Stock` : 'Out of Stock'}
+                        </p>
+                        <div class="flex items-center mt-2">
+                            <input type="number" class="stock-quantity-input w-20 p-1 rounded-lg input-dark" value="${product.quantity || 0}">
+                            <button class="update-stock-btn ml-2 px-3 py-1 bg-blue-600 text-white rounded-lg btn text-sm" data-id="${product.id}">Update</button>
+                        </div>
+                    `;
+                    container.appendChild(stockCard);
+                });
+
+                document.querySelectorAll('.update-stock-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const productId = e.target.dataset.id;
+                        const quantityInput = e.target.previousElementSibling;
+                        const newQuantity = parseInt(quantityInput.value);
+                        
+                        const productRef = doc(db, "products", productId);
+                        await updateDoc(productRef, { 
+                            quantity: newQuantity,
+                            inStock: newQuantity > 0
+                        });
+                        showToast(`Stock for ${productId} updated.`);
+                    });
+                });
+            }
+
+            function renderOrders(orders) {
+                const container = document.getElementById('orders-container');
+                container.innerHTML = '';
+                orders.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                orders.forEach(order => {
+                    const orderDate = order.createdAt?.toDate().toLocaleString() || 'N/A';
+                    const user = allUsers.find(u => u.id === order.userId);
+                    const itemsHtml = order.items?.map(item => `<li>${item.quantity} x ${item.name} ($${item.price})</li>`).join('') || '';
+                    const codesHtml = (order.giftCodes || []).map(p => `<div><p class="font-semibold text-sm">${p.productName}</p><div class="pl-2">${p.codes.map(c => `<code class="text-xs">${c}</code>`).join('<br>')}</div></div>`).join('');
+
+                    const orderCard = document.createElement('div');
+                    orderCard.className = 'glass-pane p-4 rounded-lg';
+                    orderCard.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">Order #${order.id.substring(0,8)}</p>
+                                <p class="text-xs text-gray-400">User: ${user?.email || order.userId}</p>
+                            </div>
+                            <p class="text-sm">${orderDate}</p>
+                            <p class="font-bold text-lg">$${(order.totalAmount || 0).toFixed(2)}</p>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-700 text-xs">
+                            <p class="font-semibold">Items:</p>
+                            <ul class="list-disc list-inside">${itemsHtml}</ul>
+                            <p class="font-semibold mt-2">Gift Codes:</p>
+                            ${codesHtml}
+                        </div>
+                    `;
+                    container.appendChild(orderCard);
+                });
+            }
+
             // --- Modal Logic ---
             const userDetailsModal = document.getElementById('user-details-modal');
             const closeUserModalBtn = document.getElementById('close-user-modal');
@@ -261,6 +434,7 @@
                 const userInfoSection = document.getElementById('user-info-section');
                 userInfoSection.innerHTML = `
                     <p><strong>User:</strong> ${user.name || 'N/A'} (${user.email || 'N/A'})</p>
+                    <p><strong>Phone:</strong> ${user.phone || 'N/A'} | <strong>DOB:</strong> ${user.dob || 'N/A'}</p>
                     <p><strong>Total Turnover:</strong> <span class="font-bold text-lg">$${turnover.toFixed(2)}</span></p>
                 `;
 
@@ -301,17 +475,28 @@
                 }
             });
 
+            // --- Action Handlers ---
+            async function toggleKycStatus(e) {
+                const { uid, status } = e.target.dataset;
+                const newStatus = status === 'verified' ? 'unverified' : 'verified';
+                await updateDoc(doc(db, "users", uid), { kycStatus: newStatus });
+                showToast(`User KYC status updated to ${newStatus}.`);
+                loadDashboardData();
+            }
+
+            async function togglePurchaseHold(e) {
+                const { uid, status } = e.target.dataset;
+                const canPurchase = status === 'true'; // Convert string to boolean
+                await updateDoc(doc(db, "users", uid), { canPurchase: !canPurchase });
+                showToast(`User purchase status updated.`);
+                loadDashboardData();
+            }
+
             // (All other functions from previous steps remain here)
-            function processRevenue(orders) { /* ... */ }
-            function renderRevenueChart(weeklyData) { /* ... */ }
-            function renderStock(products) { /* ... */ }
-            async function toggleKycStatus(e) { /* ... */ }
-            async function togglePurchaseHold(e) { /* ... */ }
             function renderProductManagement(products) { /* ... */ }
             function populateUserDropdown(users) { /* ... */ }
             function populateProductDropdown(products) { /* ... */ }
             async function renderDisabledProductsForUser(userId) { /* ... */ }
-            function renderOrders(orders) { /* ... */ }
             document.getElementById('add-product-form').addEventListener('submit', async e => { /* ... */ });
             document.getElementById('select-user').addEventListener('change', e => { /* ... */ });
             document.getElementById('disable-product-btn').addEventListener('click', async () => { /* ... */ });
