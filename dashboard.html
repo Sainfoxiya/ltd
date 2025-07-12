@@ -103,12 +103,81 @@
 
             <!-- Manage Profile View (hidden by default) -->
             <div id="profile-view" class="hidden">
-                 <!-- ... (Profile view content remains the same) ... -->
+                 <button class="back-to-dashboard-btn glass-card mb-8 px-4 py-2 rounded-lg font-semibold hover:bg-white">&larr; Back to Dashboard</button>
+                 <h1 class="text-4xl font-bold text-gray-800 mb-8">Manage Profile</h1>
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column: Profile Details -->
+                    <div class="lg:col-span-2 glass-card p-8 rounded-2xl">
+                        <div class="flex flex-col md:flex-row items-center md:space-x-8">
+                            <div class="relative mb-6 md:mb-0">
+                                <img id="profile-picture" src="https://placehold.co/150x150/E2E8F0/333?text=User" alt="User Profile" class="w-36 h-36 rounded-full shadow-lg">
+                                <button class="absolute bottom-0 right-0 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-700">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                            <div class="flex-grow w-full">
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center border-b border-gray-300/50 pb-2">
+                                        <span class="text-gray-600">Name:</span>
+                                        <span id="profile-name" class="font-semibold"></span>
+                                    </div>
+                                    <div class="flex justify-between items-center border-b border-gray-300/50 pb-2">
+                                        <span class="text-gray-600">Date of Birth:</span>
+                                        <span class="font-semibold">Not Set</span>
+                                    </div>
+                                    <div class="flex justify-between items-center border-b border-gray-300/50 pb-2">
+                                        <span class="text-gray-600">Email:</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span id="profile-email" class="font-semibold"></span>
+                                            <span class="bg-green-200 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">Verified</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Phone Number:</span>
+                                         <div class="flex items-center space-x-2">
+                                            <span class="font-semibold">Not Set</span>
+                                            <span class="bg-red-200 text-red-800 text-xs font-semibold px-2 py-1 rounded-full">Unverified</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Column: KYC Status -->
+                    <div class="glass-card p-8 rounded-2xl">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">KYC Verification</h2>
+                        <div class="flex items-center justify-between border-b border-gray-300/50 pb-3 mb-4">
+                            <span class="text-gray-600">Status:</span>
+                            <span id="kyc-status" class="font-semibold bg-red-200 text-red-800 text-sm px-3 py-1 rounded-full">Not Verified</span>
+                        </div>
+                        <div id="kyc-upload-section">
+                            <p class="text-sm text-gray-600 mb-3">Please upload a government-issued ID to complete verification.</p>
+                            <label for="document-upload" class="w-full text-sm bg-white/50 border border-gray-300 rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-white">
+                                <i class="fas fa-upload mr-2"></i>
+                                <span id="file-name">Choose Document</span>
+                            </label>
+                            <input type="file" id="document-upload" class="hidden">
+                            <button class="w-full mt-4 bg-gray-900 text-white font-semibold py-2 rounded-lg hover:bg-gray-800 transition-colors">Submit for Verification</button>
+                        </div>
+                         <div id="kyc-verified-section" class="hidden text-center text-green-700">
+                             <i class="fas fa-check-circle text-4xl mb-3"></i>
+                             <p class="font-semibold">Your KYC is verified.</p>
+                         </div>
+                    </div>
+                 </div>
             </div>
 
             <!-- Order History View (hidden by default) -->
             <div id="order-history-view" class="hidden">
-                <!-- ... (Order history view content remains the same) ... -->
+                <button class="back-to-dashboard-btn glass-card mb-8 px-4 py-2 rounded-lg font-semibold hover:bg-white">&larr; Back to Dashboard</button>
+                <h1 class="text-4xl font-bold text-gray-800 mb-8">Order History</h1>
+                <div class="glass-card p-8 rounded-2xl">
+                     <div class="text-center py-16 text-gray-500">
+                        <i class="fas fa-box-open text-5xl mb-4"></i>
+                        <h2 class="text-2xl font-semibold text-gray-700 mb-2">No Order History</h2>
+                        <p>You haven't made any purchases yet.</p>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -137,7 +206,20 @@
         const userEmailGreeting = document.getElementById('user-email-greeting');
         const welcomeMessage = document.getElementById('welcome-message');
         const logoutButton = document.getElementById('logout-button');
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileDropdown = document.getElementById('profile-dropdown');
         
+        // --- View Switching Elements ---
+        const manageProfileLink = document.getElementById('manage-profile-link');
+        const orderHistoryLink = document.getElementById('order-history-link');
+        const orderHistoryQuickLink = document.getElementById('order-history-quick-link');
+        const dashboardView = document.getElementById('dashboard-view');
+        const profileView = document.getElementById('profile-view');
+        const orderHistoryView = document.getElementById('order-history-view');
+        const backToDashboardButtons = document.querySelectorAll('.back-to-dashboard-btn');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+
         // --- Auth State Management ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -151,6 +233,8 @@
                 welcomeMessage.textContent = `Welcome Back, ${displayName}!`;
                 userEmailGreeting.textContent = `Aapka account overview: ${email}`;
                 userEmailDisplay.textContent = email;
+                profileName.textContent = displayName;
+                profileEmail.textContent = email;
                 
             } else {
                 // User logged in nahi hai, isliye login page par redirect karein
@@ -172,25 +256,48 @@
             });
         });
 
-        // --- View Switching Logic (Aapka maujooda script) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const profileMenuButton = document.getElementById('profile-menu-button');
-            const profileDropdown = document.getElementById('profile-dropdown');
-            
-            // Profile Dropdown Toggle
-            profileMenuButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileDropdown.classList.toggle('hidden');
-            });
+        // --- View Switching Logic ---
+        function showView(viewToShow) {
+            dashboardView.classList.add('hidden');
+            profileView.classList.add('hidden');
+            orderHistoryView.classList.add('hidden');
+            viewToShow.classList.remove('hidden');
+        }
 
-            // Bahar click karne par dropdown band karein
-            window.addEventListener('click', (e) => {
-                if (!profileMenuButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                    profileDropdown.classList.add('hidden');
-                }
-            });
+        // Profile Dropdown Toggle
+        profileMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+        });
 
-            // (Baaki view switching logic yahan aa jayega, usmein koi badlav nahi hai)
+        // Bahar click karne par dropdown band karein
+        window.addEventListener('click', (e) => {
+            if (!profileMenuButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+
+        // Navigation links
+        manageProfileLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView(profileView);
+            profileDropdown.classList.add('hidden');
+        });
+
+        const showOrderHistory = (e) => {
+             e.preventDefault();
+             showView(orderHistoryView);
+             profileDropdown.classList.add('hidden');
+        };
+
+        orderHistoryLink.addEventListener('click', showOrderHistory);
+        orderHistoryQuickLink.addEventListener('click', showOrderHistory);
+
+        backToDashboardButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                showView(dashboardView);
+            });
         });
     </script>
 </body>
