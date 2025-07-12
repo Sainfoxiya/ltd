@@ -377,8 +377,8 @@
             const user = auth.currentUser;
             if (!user || currentCartItems.length === 0) return;
             
-            if (!user.email) {
-                showToast("Error: Please add an email to your profile to receive gift codes.", true);
+            if (!user.email || user.email.trim() === '') {
+                showToast("Error: Your account has no email. Please go to your dashboard to add an email address.", true);
                 checkoutModal.classList.add('hidden');
                 return;
             }
@@ -528,7 +528,7 @@
             toastMessage.classList.remove('hidden');
             setTimeout(() => {
                 toastMessage.classList.add('hidden');
-            }, 3000);
+            }, 4000);
         }
 
     </script>
